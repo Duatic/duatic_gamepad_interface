@@ -41,10 +41,10 @@ class MecanumController(BaseController):
 
         # Get control parameters from ROS parameters
         self.max_vel = self.node.declare_parameter("max_vel", 0.6).value
-        self.max_accel = self.node.declare_parameter("max_accel", 0.1).value  # m/s²
+        self.max_accel = self.node.declare_parameter("max_accel", 0.2).value  # m/s²
 
         # Deadzone for joystick input
-        self.deadzone = self.node.declare_parameter("deadzone", 0.25).value
+        self.deadzone = self.node.declare_parameter("deadzone", 0.01).value
 
         # Current velocity state for acceleration limiting - ensure valid initialization
         self.current_linear_x = 0.0
