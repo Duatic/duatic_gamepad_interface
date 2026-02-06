@@ -1,0 +1,5 @@
+repositories:
+  duatic_dynaarm_driver:
+    type: git
+    url: https://github.com/Duatic/duatic_dynaarm_driver.git
+    version: main
