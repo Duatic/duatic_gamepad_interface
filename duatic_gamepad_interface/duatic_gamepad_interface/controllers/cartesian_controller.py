@@ -25,10 +25,12 @@
 from geometry_msgs.msg import PoseStamped
 
 from tf_transformations import quaternion_from_euler, quaternion_multiply
-from dynaarm_gamepad_interface.controllers.base_controller import BaseController
+from duatic_gamepad_interface.controllers.base_controller import BaseController
 
-from dynaarm_extensions.duatic_helpers.duatic_marker_helper import DuaticMarkerHelper
-from dynaarm_extensions.duatic_helpers.duatic_pinocchio_helper import DuaticPinocchioHelper
+from duatic_dynaarm_extensions.duatic_helpers.duatic_marker_helper import DuaticMarkerHelper
+from duatic_dynaarm_extensions.duatic_helpers.duatic_pinocchio_helper import DuaticPinocchioHelper
+from duatic_dynaarm_extensions.duatic_helpers.duatic_robots_helper import DuaticRobotsHelper
+
 
 
 class CartesianController(BaseController):

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Copyright 2026 Duatic AG
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that
@@ -21,28 +23,34 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import os
-from setuptools import find_packages, setup
+from sensor_msgs.msg import JoyFeedback
+from rclpy.node import Node
 
-package_name = "dynaarm_gamepad_interface"
 
-setup(
-    name=package_name,
-    version="1.0.0",
-    packages=find_packages(exclude=["test"]),
-    data_files=[
-        ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
-        (os.path.join("share", package_name, "config"), ["config/gamepad_config.yaml"]),
-        ("share/" + package_name, ["package.xml"]),
-    ],
-    install_requires=["setuptools"],
-    zip_safe=True,
-    maintainer="Timo Schwarzer",
-    maintainer_email="tschwarzer@duatic.com",
-    tests_require=["pytest"],
-    description="Modular gamepad interface for DynaArm using ROS 2.",
-    license="BSD-3-Clause",
-    entry_points={
-        "console_scripts": ["gamepad_interface = dynaarm_gamepad_interface.main:main"],
-    },
-)
+class GamepadFeedback:
+    """
+    A helper class to send force-feedback (rumble) commands via the ROS joy feedback mechanism.
+    """
+
+    def __init__(self, node: Node):
+        """
+        Initializes the GamepadFeedback instance.
+
+        :param node: The ROS node used for creating publishers and logging.
+        :param topic: The topic to publish JoyFeedbackArray messages on.
+        """
+        self.node = node
+        self.publisher = self.node.create_publisher(JoyFeedback, "joy/set_feedback", 10)
+
+    def send_feedback(self, intensity: float):
+        """
+        Sends a rumble feedback command.
+
+        :param intensity: A value between 0 and 1 indicating the feedback intensity.
+        """
+
+        feedback = JoyFeedback()
+        feedback.type = JoyFeedback.TYPE_RUMBLE
+        feedback.id = 0
+        feedback.intensity = intensity
+        self.publisher.publish(feedback)

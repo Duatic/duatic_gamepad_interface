@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2025 Duatic AG
+# Copyright 2026 Duatic AG
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that
 # the following conditions are met:
@@ -24,14 +24,14 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-from dynaarm_extensions.duatic_helpers.duatic_controller_helper import DuaticControllerHelper
-from dynaarm_extensions.duatic_helpers.duatic_robots_helper import DuaticRobotsHelper
-from dynaarm_gamepad_interface.controllers.joint_trajectory_controller import (
+from duatic_dynaarm_extensions.duatic_helpers.duatic_controller_helper import DuaticControllerHelper
+from duatic_dynaarm_extensions.duatic_helpers.duatic_robots_helper import DuaticRobotsHelper
+from duatic_gamepad_interface.controllers.joint_trajectory_controller import (
     JointTrajectoryController,
 )
-from dynaarm_gamepad_interface.controllers.freedrive_controller import FreedriveController
-from dynaarm_gamepad_interface.controllers.mecanum_controller import MecanumController
-from dynaarm_gamepad_interface.controllers.gripper_controller import GripperController
+from duatic_gamepad_interface.controllers.freedrive_controller import FreedriveController
+from duatic_gamepad_interface.controllers.mecanum_controller import MecanumController
+from duatic_gamepad_interface.controllers.gripper_controller import GripperController
 
 
 class ControllerManager:

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>dynaarm_gamepad_interface</name>
+  <name>duatic_gamepad_interface</name>
   <version>1.0.0</version>
   <description>Modular gamepad interface for DynaArm using ROS 2.</description>
 
@@ -14,6 +14,10 @@
   <depend>std_msgs</depend>
   <depend>tf_transformations</depend>
   <depend>joy</depend>
+  <depend>geometry_msgs</depend>
+  <depend>trajectory_msgs</depend>
+  <depend>duatic_dynaarm_extensions</depend>
+  <depend>ament_index_python</depend>
 
   <test_depend>ament_cmake_pytest</test_depend>
 

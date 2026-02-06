@@ -22,7 +22,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import math
-from dynaarm_gamepad_interface.controllers.base_controller import BaseController
+from duatic_gamepad_interface.controllers.base_controller import BaseController
 
 from geometry_msgs.msg import TwistStamped
 

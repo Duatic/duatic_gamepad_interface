@@ -34,9 +34,9 @@ from rclpy.node import Node
 from std_msgs.msg import Bool
 from sensor_msgs.msg import Joy
 
-from dynaarm_gamepad_interface.controller_manager import ControllerManager
-from dynaarm_gamepad_interface.utils.gamepad_feedback import GamepadFeedback
-from dynaarm_extensions.duatic_helpers.duatic_robots_helper import DuaticRobotsHelper
+from duatic_gamepad_interface.controller_manager import ControllerManager
+from duatic_gamepad_interface.utils.gamepad_feedback import GamepadFeedback
+from duatic_dynaarm_extensions.duatic_helpers.duatic_robots_helper import DuaticRobotsHelper
 
 
 class GamepadInterface(Node):
@@ -63,7 +63,7 @@ class GamepadInterface(Node):
 
         # Load gamepad mappings from YAML
         config_path = os.path.join(
-            get_package_share_directory("dynaarm_gamepad_interface"),
+            get_package_share_directory("duatic_gamepad_interface"),
             "config",
             "gamepad_config.yaml",
         )

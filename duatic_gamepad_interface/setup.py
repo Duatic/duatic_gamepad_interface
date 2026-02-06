@@ -21,38 +21,28 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from dynaarm_extensions.duatic_helpers.duatic_robots_helper import DuaticRobotsHelper
-from dynaarm_extensions.duatic_helpers.duatic_jtc_helper import DuaticJTCHelper
+import os
+from setuptools import find_packages, setup
 
+package_name = "duatic_gamepad_interface"
 
-class BaseController:
-    """Base class for all controllers, providing logging and common methods."""
-
-    def __init__(self, node, duatic_robots_helper: DuaticRobotsHelper):
-        self.node = node
-        self.log_printed = False  # Track whether the log was printed
-        self.needed_low_level_controllers = None
-        self.joint_pos_offset_tolerance = 0.1
-
-        self.duatic_robots_helper = duatic_robots_helper
-        self.duatic_jtc_helper = DuaticJTCHelper(self.node)
-
-    def get_low_level_controllers(self):
-        """Returns the name of the low-level controller this controller is based on."""
-        return self.needed_low_level_controllers
-
-    def process_input(self, joy_msg):
-        """Override this in child classes."""
-        pass
-
-    def reset(self):
-        """Reset controller state when switching back to this controller."""
-        self.log_printed = False  # Reset logging state
-
-    def get_arm_from_topic(self, topic):
-        """Extract arm name from topic like '/joint_trajectory_controller_arm_left/joint_trajectory'"""
-        if "arm_left" in topic:
-            return "arm_left"
-        elif "arm_right" in topic:
-            return "arm_right"
-        return ""
+setup(
+    name=package_name,
+    version="1.0.0",
+    packages=find_packages(exclude=["test"]),
+    data_files=[
+        ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
+        (os.path.join("share", package_name, "config"), ["config/gamepad_config.yaml"]),
+        ("share/" + package_name, ["package.xml"]),
+    ],
+    install_requires=["setuptools"],
+    zip_safe=True,
+    maintainer="Timo Schwarzer",
+    maintainer_email="tschwarzer@duatic.com",
+    tests_require=["pytest"],
+    description="Modular gamepad interface for DynaArm using ROS 2.",
+    license="BSD-3-Clause",
+    entry_points={
+        "console_scripts": ["gamepad_interface = duatic_gamepad_interface.main:main"],
+    },
+)

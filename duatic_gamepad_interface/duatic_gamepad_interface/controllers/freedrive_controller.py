@@ -21,7 +21,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from dynaarm_gamepad_interface.controllers.base_controller import BaseController
+from duatic_gamepad_interface.controllers.base_controller import BaseController
 
 
 class FreedriveController(BaseController):

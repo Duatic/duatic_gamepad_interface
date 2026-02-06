@@ -5,7 +5,7 @@
 [![Rolling Build Main](https://github.com/Duatic/duatic_control/actions/workflows/build-rolling.yml/badge.svg?branch=main)](https://github.com/Duatic/duatic_control/actions/workflows/build-rolling.yml)
 
 
-This repository contains the gamepad interface for the  [Duatic DynaArm](https://duatic.com/robotic-arm/).
+This repository contains the gamepad interface for the Duatic Products
 
 # License
 
