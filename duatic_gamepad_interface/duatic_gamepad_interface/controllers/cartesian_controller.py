@@ -29,7 +29,6 @@ from duatic_gamepad_interface.controllers.base_controller import BaseController
 
 from duatic_dynaarm_extensions.duatic_helpers.duatic_marker_helper import DuaticMarkerHelper
 from duatic_dynaarm_extensions.duatic_helpers.duatic_pinocchio_helper import DuaticPinocchioHelper
-from duatic_dynaarm_extensions.duatic_helpers.duatic_robots_helper import DuaticRobotsHelper
 
 
 class CartesianController(BaseController):
