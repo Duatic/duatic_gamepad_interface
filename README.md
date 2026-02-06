@@ -1,8 +1,8 @@
 # duatic_gamepad_interface
 
-[![Jazzy Build Main](https://github.com/Duatic/duatic_control/actions/workflows/build-jazzy.yml/badge.svg?branch=main)](https://github.com/Duatic/duatic_control/actions/workflows/build-jazzy.yml)
-[![Kilted Build Main](https://github.com/Duatic/duatic_control/actions/workflows/build-kilted.yml/badge.svg?branch=main)](https://github.com/Duatic/duatic_control/actions/workflows/build-kilted.yml)
-[![Rolling Build Main](https://github.com/Duatic/duatic_control/actions/workflows/build-rolling.yml/badge.svg?branch=main)](https://github.com/Duatic/duatic_control/actions/workflows/build-rolling.yml)
+[![Jazzy Build Main](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/build-jazzy.yml/badge.svg?branch=main)](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/build-jazzy.yml)
+[![Kilted Build Main](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/build-kilted.yml/badge.svg?branch=main)](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/build-kilted.yml)
+[![Rolling Build Main](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/build-rolling.yml/badge.svg?branch=main)](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/build-rolling.yml)
 
 
 This repository contains the gamepad interface for the Duatic Products
