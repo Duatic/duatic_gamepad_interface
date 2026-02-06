@@ -32,7 +32,6 @@ from duatic_dynaarm_extensions.duatic_helpers.duatic_pinocchio_helper import Dua
 from duatic_dynaarm_extensions.duatic_helpers.duatic_robots_helper import DuaticRobotsHelper
 
 
-
 class CartesianController(BaseController):
     """Handles Cartesian control mode and publishes a visualization marker."""
 
