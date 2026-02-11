@@ -1,6 +1,11 @@
-# dynaarm_gamepad_interface
+# duatic_gamepad_interface
 
-This repository contains the gamepad interface for the  [Duatic DynaArm](https://duatic.com/robotic-arm/).
+[![Jazzy Build Main](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/build-jazzy.yml/badge.svg?branch=main)](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/build-jazzy.yml)
+[![Kilted Build Main](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/build-kilted.yml/badge.svg?branch=main)](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/build-kilted.yml)
+[![Rolling Build Main](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/build-rolling.yml/badge.svg?branch=main)](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/build-rolling.yml)
+
+
+This repository contains the gamepad interface for the Duatic Products
 
 # License
 
@@ -10,7 +15,7 @@ Images in this repository are to be licensed separately if you want to use them 
 # Usage
 
 ```bash
-ros2 launch dynaarm_gamepad_interface gamepad_interface.launch.py
+ros2 run duatic_gamepad_interface gamepad_interface
 ```
 
 # Contributing

@@ -1,4 +1,4 @@
-# Copyright 2025 Duatic AG
+# Copyright 2026 Duatic AG
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that
 # the following conditions are met:
@@ -22,7 +22,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import math
-from dynaarm_gamepad_interface.controllers.base_controller import BaseController
+from duatic_gamepad_interface.controllers.base_controller import BaseController
 
 from geometry_msgs.msg import TwistStamped
 

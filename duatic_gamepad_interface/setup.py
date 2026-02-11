@@ -1,4 +1,4 @@
-# Copyright 2025 Duatic AG
+# Copyright 2026 Duatic AG
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that
 # the following conditions are met:
@@ -24,7 +24,7 @@
 import os
 from setuptools import find_packages, setup
 
-package_name = "dynaarm_gamepad_interface"
+package_name = "duatic_gamepad_interface"
 
 setup(
     name=package_name,
@@ -43,6 +43,6 @@ setup(
     description="Modular gamepad interface for DynaArm using ROS 2.",
     license="BSD-3-Clause",
     entry_points={
-        "console_scripts": ["gamepad_interface = dynaarm_gamepad_interface.main:main"],
+        "console_scripts": ["gamepad_interface = duatic_gamepad_interface.main:main"],
     },
 )
