@@ -34,7 +34,10 @@ class MecanumController(BaseController):
         super().__init__(node, duatic_robots_helper)
         self.node.get_logger().info("Initializing mecanum controller.")
 
-        self.needed_low_level_controllers = ["mecanum_drive_controller"]
+        self.needed_low_level_controllers = [
+            "mecanum_drive_controller",
+            "joint_trajectory_controller",
+        ]
 
         # Create publisher for mecanum drive
         self.twist_publisher = self.node.create_publisher(TwistStamped, "cmd_vel", 10)
