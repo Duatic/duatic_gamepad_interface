@@ -1,15 +1,19 @@
 repositories:
-  duatic_dynaarm_driver:
-    type: git
-    url: https://github.com/Duatic/duatic_dynaarm_driver.git
-    version: main
   duatic_control:
     type: git
     url: https://github.com/Duatic/duatic_control.git
     version: main
+  duatic_dynaarm_driver:
+    type: git
+    url: https://github.com/Duatic/duatic_dynaarm_driver.git
+    version: main
   duatic_dynaarm_description:
     type: git
     url: https://github.com/Duatic/duatic_dynaarm_description.git
+    version: main
+  duatic_ros2control:
+    type: git
+    url: https://github.com/Duatic/duatic_ros2control.git
     version: main
   ethercat_sdk_master:
     type: git
@@ -17,8 +21,8 @@ repositories:
     version: master
   message_logger:
     type: git
-    url: https://github.com/leggedrobotics/message_logger.git
-    version: ros2
+    url: https://github.com/Duatic/message_logger.git
+    version: main
   rsl_drive_sdk:
     type: git
     url: https://github.com/Duatic/rsl_drive_sdk.git
