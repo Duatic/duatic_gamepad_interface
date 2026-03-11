@@ -107,11 +107,11 @@ class ControllerManager:
                     )
                     new_index += 1
                 else:
-                    self.node.get_logger().warn(
+                    self.node.get_logger().debug(
                         f"❌ {controller_name} - Unavailable (missing: {missing_controllers})"
                     )
             else:
-                self.node.get_logger().warn(
+                self.node.get_logger().debug(
                     f"❌ {controller_name} - No get_low_level_controllers method"
                 )
 
