@@ -99,8 +99,12 @@ class MecanumController(BaseController):
 
     def process_input(self, joy_msg):
         """Process joystick input and convert to mecanum drive commands."""
+        if not self.node.deadman_active:
+            self._send_zero_command()
+            return
 
         # Calculate time delta
+
         current_time = self.node.get_clock().now()
         dt = (current_time - self.last_time).nanoseconds / 1e9
         self.last_time = current_time

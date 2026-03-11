@@ -36,10 +36,17 @@ class BaseController:
 
         self.duatic_robots_helper = duatic_robots_helper
         self.duatic_jtc_helper = DuaticJTCHelper(self.node)
+        self.focused_component = "arm_left"
 
     def get_low_level_controllers(self):
         """Returns the name of the low-level controller this controller is based on."""
         return self.needed_low_level_controllers
+
+    def get_focus(self):
+        return self.focused_component
+
+    def set_focus(self, focus_name):
+        self.focused_component = focus_name
 
     def process_input(self, joy_msg):
         """Override this in child classes."""
@@ -50,9 +57,12 @@ class BaseController:
         self.log_printed = False  # Reset logging state
 
     def get_arm_from_topic(self, topic):
-        """Extract arm name from topic like '/joint_trajectory_controller_arm_left/joint_trajectory'"""
+        """Extract component name from topic like '/joint_trajectory_controller_arm_left/joint_trajectory'"""
         if "arm_left" in topic:
             return "arm_left"
         elif "arm_right" in topic:
             return "arm_right"
+        elif "hip" in topic:
+            return "hip"
         return ""
+

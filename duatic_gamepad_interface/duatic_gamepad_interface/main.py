@@ -113,15 +113,13 @@ class GamepadInterface(Node):
             return
 
         # Check deadman switch and track state changes
-        current_deadman_state = msg.buttons[self.button_mapping["dead_man_switch"]]
+        current_deadman_state = msg.buttons[self.button_mapping["dead_man_switch"]] == 1
         deadman_just_released = self.deadman_active and not current_deadman_state
-
-        # Update deadman state
+        deadman_just_pressed = not self.deadman_active and current_deadman_state
         self.deadman_active = current_deadman_state
 
         if not self.deadman_active:
-
-            # If deadman is not active, stop any move commands that were previously active
+            # stop any move commands that were previously active
             if self.move_command_active:
                 self.move_home_pub.publish(Bool(data=False))
                 self.move_sleep_pub.publish(Bool(data=False))
@@ -133,30 +131,36 @@ class GamepadInterface(Node):
                 if current_controller is not None:
                     current_controller.reset()
 
-            return
+        # Reset controller when deadman is just pressed to start from current physical positions
+        if deadman_just_pressed:
+            current_controller = self.controller_manager.get_current_controller()
+            if current_controller is not None:
+                current_controller.reset()
 
-        # Deadman switch is active, check for move commands
-        move_home_pressed = msg.buttons[self.button_mapping["move_home"]]
-        move_sleep_pressed = msg.buttons[self.button_mapping["move_sleep"]]
 
-        if move_home_pressed:
-            self.move_home_pub.publish(Bool(data=True))
-            self.move_command_active = True
-            return
-        elif move_sleep_pressed:
-            self.move_sleep_pub.publish(Bool(data=True))
-            self.move_command_active = True
-            return
-        else:
-            # No move commands pressed, stop them if they were active
-            if self.move_command_active:
-                self.move_home_pub.publish(Bool(data=False))
-                self.move_sleep_pub.publish(Bool(data=False))
-                self.move_command_active = False
-                # Reset current controller after move commands are stopped
-                current_controller = self.controller_manager.get_current_controller()
-                if current_controller is not None:
-                    current_controller.reset()
+        # Check for move commands (only if deadman is active)
+        if self.deadman_active:
+            move_home_pressed = msg.buttons[self.button_mapping["move_home"]]
+            move_sleep_pressed = msg.buttons[self.button_mapping["move_sleep"]]
+
+            if move_home_pressed:
+                self.move_home_pub.publish(Bool(data=True))
+                self.move_command_active = True
+                return
+            elif move_sleep_pressed:
+                self.move_sleep_pub.publish(Bool(data=True))
+                self.move_command_active = True
+                return
+            else:
+                # No move commands pressed, stop them if they were active
+                if self.move_command_active:
+                    self.move_home_pub.publish(Bool(data=False))
+                    self.move_sleep_pub.publish(Bool(data=False))
+                    self.move_command_active = False
+                    # Reset current controller after move commands are stopped
+                    current_controller = self.controller_manager.get_current_controller()
+                    if current_controller is not None:
+                        current_controller.reset()
 
         # Use dynamically loaded menu button index
         switch_controller_index = self.button_mapping["switch_controller"]
@@ -172,7 +176,6 @@ class GamepadInterface(Node):
         # And don't execute anything else when the button is pressed
         self.last_menu_button_state = msg.buttons[switch_controller_index]
         if self.last_menu_button_state:
-            # TODO Hold current position?
             return
 
         self.controller_manager.gripper_controller.process_input(msg)
@@ -185,7 +188,9 @@ class GamepadInterface(Node):
                 # If freeze is active, we don't process any input
                 current_controller.reset()
             else:
+                # Pass deadman state so controller knows if it can move
                 current_controller.process_input(msg)
+
 
 
 def main(args=None):

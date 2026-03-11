@@ -51,7 +51,6 @@ class ControllerManager:
         self.all_potential_controllers = {
             0: FreedriveController(self.node, duatic_robots_helper),
             1: JointTrajectoryController(self.node, duatic_robots_helper),
-            # 2: CartesianController(self.node, duatic_robots_helper),
             2: MecanumController(self.node, duatic_robots_helper),
         }
 
@@ -85,35 +84,35 @@ class ControllerManager:
 
             if hasattr(controller, "get_low_level_controllers"):
                 required_controllers = controller.get_low_level_controllers()
-
-                # Check if all required low-level controllers are available
-                all_required_available = True
-                missing_controllers = []
-
-                for required in required_controllers:
-                    # Check if any system controller contains the required controller name
-                    controller_found = any(
-                        required in system_controller
-                        for system_controller in all_system_controllers
-                    )
-                    if not controller_found:
-                        all_required_available = False
-                        missing_controllers.append(required)
-
-                if all_required_available:
+                
+                # Use helper to find matching controllers (supports both base names and specific names)
+                matching_controllers = self.duatic_controller_helper.get_all_controllers(required_controllers)
+                
+                # Check if all required low-level controllers are satisfied
+                # A controller is available if at least as many matching LLCs are found as required
+                # (This handles both base pattern requirements and specific instance requirements)
+                if len(matching_controllers) >= len(required_controllers):
                     available_controllers[new_index] = controller
                     self.node.get_logger().info(
                         f"✅ {controller_name} (index {new_index}) - Available (requires: {required_controllers})"
                     )
                     new_index += 1
                 else:
+                    # Determine what exactly is missing for the log
+                    missing = [r for r in required_controllers if r not in matching_controllers]
+                    # If required was a base name, check if any instance of that base was found
+                    for r in required_controllers:
+                        if r in missing and any(m.startswith(r) for m in matching_controllers):
+                            missing.remove(r)
+
                     self.node.get_logger().debug(
-                        f"❌ {controller_name} - Unavailable (missing: {missing_controllers})"
+                        f"❌ {controller_name} - Unavailable (missing: {missing})"
                     )
             else:
                 self.node.get_logger().debug(
                     f"❌ {controller_name} - No get_low_level_controllers method"
                 )
+
 
         self.all_high_level_controllers = available_controllers
 
@@ -285,3 +284,27 @@ class ControllerManager:
 
         for idx, high_level_controller in self.all_high_level_controllers.items():
             high_level_controller.reset()
+
+    def trigger_llc_sync(self):
+        """Synchronize low-level controllers based on the current high-level controller's needs."""
+        current_hlc = self.get_current_controller()
+        if not current_hlc:
+            return
+
+        needed_llcs = current_hlc.get_low_level_controllers()
+        if not needed_llcs:
+            return
+
+        active_llcs = self.duatic_controller_helper.get_active_controllers()
+        target_llcs = self.duatic_controller_helper.get_all_controllers(needed_llcs)
+
+        activate = [c for c in target_llcs if c not in active_llcs]
+        deactivate = [c for c in active_llcs if c not in target_llcs]
+
+        # Safety: Do not deactivate mecanum or freedrive if they are still part of the potential needs
+        # (Though trigger_llc_sync is usually called within one HLC mode)
+
+        if activate or deactivate:
+            self.node.get_logger().info(f"Syncing LLCs: activate={activate}, deactivate={deactivate}")
+            self.duatic_controller_helper.switch_controller(activate, deactivate)
+
