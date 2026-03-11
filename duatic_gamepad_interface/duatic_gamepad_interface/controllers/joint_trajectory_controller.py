@@ -30,7 +30,6 @@ from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 class JointTrajectoryController(BaseController):
     """Handles joint trajectory control using the gamepad"""
 
-    MIRRORED_BASES = {"shoulder_rotation", "forearm_rotation", "wrist_rotation"}
 
     def __init__(self, node, duatic_robots_helper):
         super().__init__(node, duatic_robots_helper)
@@ -50,10 +49,6 @@ class JointTrajectoryController(BaseController):
         for topic, joint_names in self.topic_to_joint_names.items():
             self.topic_to_commanded_positions[topic] = [0.0] * len(joint_names)
 
-        # Build mirrored joints
-        self.mirror = self.node.get_parameter("mirror").get_parameter_value().bool_value
-        self.mirrored_joints = []
-        self._build_mirrored_joints()
 
         # Focus management
         self.last_dpad_msg = {"x": 0.0, "y": 0.0, "buttons": [0]*15}
@@ -76,17 +71,11 @@ class JointTrajectoryController(BaseController):
             "right_joystick": {"x": False, "y": False},
         }
 
-        if self.mirrored_joints:
-            self.node.get_logger().info(f"Mirrored joints: {self.mirrored_joints}")
 
         self.node.get_logger().info("Joint Trajectory Controller initialized.")
 
     def get_low_level_controllers(self):
         """Returns specific LLC names based on focus."""
-        if self.mirror:
-            # Mirror mode requires both arms
-            return ["joint_trajectory_controller_arm_left", "joint_trajectory_controller_arm_right"]
-
         # Return the specific controller for the focus
         for topic in self.topic_to_joint_names.keys():
             if f"_{self.focused_component}/" in topic or topic.endswith(f"_{self.focused_component}"):
@@ -171,12 +160,7 @@ class JointTrajectoryController(BaseController):
         for topic, joint_names in self.topic_to_joint_names.items():
             arm_name = self.get_arm_from_topic(topic)
 
-            # Normal mode: Only process the focused component
-            if not self.mirror and arm_name != self.focused_component:
-                continue
-            
-            # Mirror mode: Only process Arm Left (which then mirrors to Arm Right)
-            if self.mirror and arm_name == "arm_right":
+            if arm_name != self.focused_component:
                 continue
 
             # Safety: Only move if deadman is active
@@ -212,8 +196,6 @@ class JointTrajectoryController(BaseController):
                     if move_left: axis_val = -1.0
                     elif move_right: axis_val = 1.0
 
-                if self.mirror and joint_name in self.mirrored_joints:
-                    axis_val = -axis_val
 
                 if abs(axis_val) > effective_deadzone:
                     current_position = self.duatic_robots_helper.get_joint_value_from_states(joint_name)
@@ -231,14 +213,12 @@ class JointTrajectoryController(BaseController):
             self.is_joystick_idle = False
             for topic, publisher in self.joint_trajectory_publishers.items():
                 arm_name = self.get_arm_from_topic(topic)
-                if self.mirror:
-                    self.publish_joint_trajectory(self.topic_to_commanded_positions[topic], publisher, self.topic_to_joint_names[topic])
-                elif arm_name == self.focused_component:
+                if arm_name == self.focused_component:
                     self.publish_joint_trajectory(self.topic_to_commanded_positions[topic], publisher, self.topic_to_joint_names[topic])
         elif not any_axis_active and not self.is_joystick_idle:
             for topic, publisher in self.joint_trajectory_publishers.items():
                 arm_name = self.get_arm_from_topic(topic)
-                if self.mirror or arm_name == self.focused_component:
+                if arm_name == self.focused_component:
                     self.publish_joint_trajectory(self.topic_to_commanded_positions[topic], publisher, self.topic_to_joint_names[topic])
             self.is_joystick_idle = True
 
@@ -281,18 +261,4 @@ class JointTrajectoryController(BaseController):
         self.active_axes["right_joystick"]["x"] = abs(right_x) > deadzone
         self.active_axes["right_joystick"]["y"] = abs(right_y) > deadzone
 
-    def _build_mirrored_joints(self):
-        """Build list of joints that should be mirrored based on MIRRORED_BASES."""
-        all_joints = []
-        for joint_names in self.topic_to_joint_names.values():
-            all_joints.extend(joint_names)
-
-        for base in self.MIRRORED_BASES:
-            found = []
-            for joint in all_joints:
-                if joint.endswith("/" + base) or joint.endswith("_" + base) or joint == base:
-                    found.append(joint)
-            if len(found) == 2:
-                found_sorted = sorted(found)
-                self.mirrored_joints.append(found_sorted[1])
 

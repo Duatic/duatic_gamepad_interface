@@ -42,7 +42,7 @@ from duatic_dynaarm_extensions.duatic_helpers.duatic_robots_helper import Duatic
 class GamepadInterface(Node):
     """Processes joystick input"""
 
-    def __init__(self, mirror=False):
+    def __init__(self):
         super().__init__("gamepad_interface")
 
         self.latest_joy_msg = None
@@ -51,8 +51,6 @@ class GamepadInterface(Node):
         self.move_command_active = False  # Track if move_home or move_sleep was executed
         self.deadman_active = False  # Track deadman switch state
         self.last_deadman_state = False  # Track previous deadman state for edge detection
-
-        self.declare_parameter("mirror", mirror)
 
         # Publishers
         self.move_home_pub = self.create_publisher(Bool, "move_home", 10)
@@ -196,11 +194,10 @@ class GamepadInterface(Node):
 def main(args=None):
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mirror", action="store_true", help="Mirror arm movements")
     parsed_args, unknown = parser.parse_known_args()  # ← ignore ROS args
 
     rclpy.init(args=unknown)  # ← pass remaining args to rclpy
-    node = GamepadInterface(mirror=parsed_args.mirror)
+    node = GamepadInterface()
 
     try:
         rclpy.spin(node)
