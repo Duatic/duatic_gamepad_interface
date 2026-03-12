@@ -76,7 +76,6 @@ class GamepadInterface(Node):
         self.duatic_robots_helper = DuaticRobotsHelper(self)
         self.duatic_robots_helper.wait_for_robot()
         self.controller_manager = ControllerManager(self, self.duatic_robots_helper)
-        self.controller_manager.wait_for_controller_loaded("joint_trajectory_controller")
 
         self.gamepad_feedback = GamepadFeedback(self)
 
@@ -135,8 +134,8 @@ class GamepadInterface(Node):
             if current_controller is not None:
                 current_controller.reset()
 
-        # Check for move commands (only if deadman is active)
-        if self.deadman_active:
+        # Check for move commands (only if deadman is active and NOT in E-Stop)
+        if self.deadman_active and not self.controller_manager.is_freeze_active:
             move_home_pressed = msg.buttons[self.button_mapping["move_home"]]
             move_sleep_pressed = msg.buttons[self.button_mapping["move_sleep"]]
 
@@ -151,13 +150,10 @@ class GamepadInterface(Node):
             else:
                 # No move commands pressed, stop them if they were active
                 if self.move_command_active:
-                    self.move_home_pub.publish(Bool(data=False))
-                    self.move_sleep_pub.publish(Bool(data=False))
-                    self.move_command_active = False
-                    # Reset current controller after move commands are stopped
-                    current_controller = self.controller_manager.get_current_controller()
-                    if current_controller is not None:
-                        current_controller.reset()
+                    self._stop_move_commands()
+        elif self.move_command_active:
+            # If move command was active but deadman or freeze changed, stop it
+            self._stop_move_commands()
 
         # Use dynamically loaded menu button index
         switch_controller_index = self.button_mapping["switch_controller"]
@@ -187,6 +183,17 @@ class GamepadInterface(Node):
             else:
                 # Pass deadman state so controller knows if it can move
                 current_controller.process_input(msg)
+
+
+    def _stop_move_commands(self):
+        """Stop move_home and move_sleep commands and reset controller."""
+        self.move_home_pub.publish(Bool(data=False))
+        self.move_sleep_pub.publish(Bool(data=False))
+        self.move_command_active = False
+        # Reset current controller after move commands are stopped
+        current_controller = self.controller_manager.get_current_controller()
+        if current_controller is not None:
+            current_controller.reset()
 
 
 def main(args=None):

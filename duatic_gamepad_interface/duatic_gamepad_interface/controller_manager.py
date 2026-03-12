@@ -161,6 +161,8 @@ class ControllerManager:
             self.node.get_logger().warn("    ✅   Emergency stop is DEACTIVATED!   ✅           ")
             self.is_freeze_active = False
             self.emergency_button_was_pressed = False
+            # Sync controllers to catch up with any changes made while frozen
+            self.trigger_llc_sync()
 
         active_low_level_controllers = self.duatic_controller_helper.get_active_controllers()
         if not active_low_level_controllers or len(active_low_level_controllers) <= 0:
@@ -263,6 +265,12 @@ class ControllerManager:
             f"Switching to high-level controller index: {next_high_level_controller_index} ({next_high_level_controller.__class__.__name__})"
         )
 
+        # If freeze is active, we do NOT switch low-level controllers now.
+        # We wait until freeze is deactivated and then sync.
+        if self.is_freeze_active:
+            self.node.get_logger().info("E-Stop active: Deferring low-level controller switch until deactivated.")
+            return
+
         matching_controllers = self.duatic_controller_helper.get_all_controllers(
             next_low_level_controllers
         )
@@ -295,6 +303,10 @@ class ControllerManager:
 
     def trigger_llc_sync(self):
         """Synchronize low-level controllers based on the current high-level controller's needs."""
+        if self.is_freeze_active:
+            self.node.get_logger().debug("Cannot sync LLCs while E-Stop is active.")
+            return
+
         current_hlc = self.get_current_controller()
         if not current_hlc:
             return

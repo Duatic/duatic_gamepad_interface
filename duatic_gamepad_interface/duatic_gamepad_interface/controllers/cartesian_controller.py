@@ -66,7 +66,7 @@ class CartesianController(BaseController):
 
         if len(self.arms) >= 2:
             self.base_frame = "tbase"
-            self.pin_helper = DuaticPinocchioHelper(self.node, robot_type="Alpha")
+            self.pin_helper = DuaticPinocchioHelper(self.node) # Product-agnostic
         else:
             self.base_frame = "world"
             self.pin_helper = DuaticPinocchioHelper(self.node)

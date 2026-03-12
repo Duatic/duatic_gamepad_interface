@@ -23,6 +23,7 @@
 
 from duatic_dynaarm_extensions.duatic_helpers.duatic_robots_helper import DuaticRobotsHelper
 from duatic_dynaarm_extensions.duatic_helpers.duatic_jtc_helper import DuaticJTCHelper
+from duatic_dynaarm_extensions.duatic_helpers.duatic_controller_helper import DuaticControllerHelper
 
 
 class BaseController:
@@ -36,6 +37,7 @@ class BaseController:
 
         self.duatic_robots_helper = duatic_robots_helper
         self.duatic_jtc_helper = DuaticJTCHelper(self.node)
+        self.duatic_controller_helper = DuaticControllerHelper(self.node)
         self.focused_component = "arm_left"
 
     def get_low_level_controllers(self):
