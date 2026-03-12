@@ -42,7 +42,7 @@ class CartesianController(BaseController):
         self.ee_frame = "flange"
         self.current_pose = None
         self.scale = 0.05
-        
+
         self.needed_low_level_controllers = [
             "cartesian_pose_controller",
         ]

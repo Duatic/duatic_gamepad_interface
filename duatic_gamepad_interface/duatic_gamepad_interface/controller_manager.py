@@ -47,6 +47,9 @@ class ControllerManager:
 
         self.duatic_controller_helper = DuaticControllerHelper(self.node)
 
+        # Controllers that should not be deactivated once they are active (to preserve state/odometry)
+        self.protected_llcs = ["mecanum_drive_controller"]
+
         # Initialize all potential controllers
         self.all_potential_controllers = {
             0: FreedriveController(self.node, duatic_robots_helper),
@@ -84,10 +87,12 @@ class ControllerManager:
 
             if hasattr(controller, "get_low_level_controllers"):
                 required_controllers = controller.get_low_level_controllers()
-                
+
                 # Use helper to find matching controllers (supports both base names and specific names)
-                matching_controllers = self.duatic_controller_helper.get_all_controllers(required_controllers)
-                
+                matching_controllers = self.duatic_controller_helper.get_all_controllers(
+                    required_controllers
+                )
+
                 # Check if all required low-level controllers are satisfied
                 # A controller is available if at least as many matching LLCs are found as required
                 # (This handles both base pattern requirements and specific instance requirements)
@@ -112,7 +117,6 @@ class ControllerManager:
                 self.node.get_logger().debug(
                     f"❌ {controller_name} - No get_low_level_controllers method"
                 )
-
 
         self.all_high_level_controllers = available_controllers
 
@@ -274,9 +278,13 @@ class ControllerManager:
 
         controllers_to_deactivate = []
         for controller in active_low_level_controllers:
-            if controller not in matching_controllers:
+            # Check if controller is in protected list (by base name or exact name)
+            is_protected = any(controller.startswith(p) for p in self.protected_llcs)
+            if controller not in matching_controllers and not is_protected:
                 controllers_to_deactivate.append(controller)
                 self.node.get_logger().debug(f"Will deactivate controller: {controller}")
+            elif is_protected:
+                self.node.get_logger().debug(f"Preserving protected controller: {controller}")
 
         self.duatic_controller_helper.switch_controller(
             controllers_to_activate, controllers_to_deactivate
@@ -299,12 +307,17 @@ class ControllerManager:
         target_llcs = self.duatic_controller_helper.get_all_controllers(needed_llcs)
 
         activate = [c for c in target_llcs if c not in active_llcs]
-        deactivate = [c for c in active_llcs if c not in target_llcs]
+        deactivate = []
+        for c in active_llcs:
+            is_protected = any(c.startswith(p) for p in self.protected_llcs)
+            if c not in target_llcs and not is_protected:
+                deactivate.append(c)
 
         # Safety: Do not deactivate mecanum or freedrive if they are still part of the potential needs
         # (Though trigger_llc_sync is usually called within one HLC mode)
 
         if activate or deactivate:
-            self.node.get_logger().info(f"Syncing LLCs: activate={activate}, deactivate={deactivate}")
+            self.node.get_logger().info(
+                f"Syncing LLCs: activate={activate}, deactivate={deactivate}"
+            )
             self.duatic_controller_helper.switch_controller(activate, deactivate)
-

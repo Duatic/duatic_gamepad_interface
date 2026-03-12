@@ -26,10 +26,8 @@ import math
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 
-
 class JointTrajectoryController(BaseController):
     """Handles joint trajectory control using the gamepad"""
-
 
     def __init__(self, node, duatic_robots_helper):
         super().__init__(node, duatic_robots_helper)
@@ -49,10 +47,13 @@ class JointTrajectoryController(BaseController):
         for topic, joint_names in self.topic_to_joint_names.items():
             self.topic_to_commanded_positions[topic] = [0.0] * len(joint_names)
 
-
         # Focus management
-        self.last_dpad_msg = {"x": 0.0, "y": 0.0, "buttons": [0]*15}
-        self.focused_component = "arm_left" if "arm_left" in self.all_components else (self.all_components[0] if self.all_components else "")
+        self.last_dpad_msg = {"x": 0.0, "y": 0.0, "buttons": [0] * 15}
+        self.focused_component = (
+            "arm_left"
+            if "arm_left" in self.all_components
+            else (self.all_components[0] if self.all_components else "")
+        )
 
         # Create publishers for each joint trajectory topic
         self.joint_trajectory_publishers = {}
@@ -71,20 +72,22 @@ class JointTrajectoryController(BaseController):
             "right_joystick": {"x": False, "y": False},
         }
 
-
         self.node.get_logger().info("Joint Trajectory Controller initialized.")
 
     def get_low_level_controllers(self):
-        """Returns specific LLC names based on focus."""
-        # Return the specific controller for the focus
+        """Returns all discovered JTC controller names to keep them active simultaneously."""
+        controllers = []
         for topic in self.topic_to_joint_names.keys():
-            if f"_{self.focused_component}/" in topic or topic.endswith(f"_{self.focused_component}"):
-                # Extract the controller name part: joint_trajectory_controller_arm_left
-                segments = topic.strip("/").split("/")
-                if len(segments) >= 2:
-                    return [segments[-2]]
+            # Extract the controller name part from the topic
+            # e.g., '/joint_trajectory_controller_arm_left/joint_trajectory' -> 'joint_trajectory_controller_arm_left'
+            segments = topic.strip("/").split("/")
+            if len(segments) >= 2:
+                controllers.append(segments[-2])
 
-        return ["joint_trajectory_controller"]
+        if not controllers:
+            return ["joint_trajectory_controller"]
+
+        return controllers
 
     def reset(self):
         """Reset commanded positions to current joint states for all topics."""
@@ -98,20 +101,34 @@ class JointTrajectoryController(BaseController):
     def _update_focus(self, joy_msg):
         """Update focus based on D-Pad input (axes 6,7 or buttons 11-14)."""
         dpad_x = 0.0
-        dpad_y = 1.0 if (len(joy_msg.buttons) > 11 and joy_msg.buttons[11] and not self.last_dpad_msg["buttons"][11]) else (0.0)
-        
+        dpad_y = (
+            1.0
+            if (
+                len(joy_msg.buttons) > 11
+                and joy_msg.buttons[11]
+                and not self.last_dpad_msg["buttons"][11]
+            )
+            else (0.0)
+        )
+
         # Check Axes 6/7 (Standard for many controllers)
         if len(joy_msg.axes) > 7:
-            if abs(joy_msg.axes[6]) > 0.5: dpad_x = joy_msg.axes[6]
-            if abs(joy_msg.axes[7]) > 0.5: dpad_y = joy_msg.axes[7]
-            
+            if abs(joy_msg.axes[6]) > 0.5:
+                dpad_x = joy_msg.axes[6]
+            if abs(joy_msg.axes[7]) > 0.5:
+                dpad_y = joy_msg.axes[7]
+
         # Check Buttons (Fallback or overlay)
         # 11=Up, 12=Down, 13=Left, 14=Right
         if len(joy_msg.buttons) > 14:
-            if joy_msg.buttons[11] and not self.last_dpad_msg["buttons"][11]: dpad_y = 1.0
-            if joy_msg.buttons[12] and not self.last_dpad_msg["buttons"][12]: dpad_y = -1.0
-            if joy_msg.buttons[13] and not self.last_dpad_msg["buttons"][13]: dpad_x = 1.0
-            if joy_msg.buttons[14] and not self.last_dpad_msg["buttons"][14]: dpad_x = -1.0
+            if joy_msg.buttons[11] and not self.last_dpad_msg["buttons"][11]:
+                dpad_y = 1.0
+            if joy_msg.buttons[12] and not self.last_dpad_msg["buttons"][12]:
+                dpad_y = -1.0
+            if joy_msg.buttons[13] and not self.last_dpad_msg["buttons"][13]:
+                dpad_x = 1.0
+            if joy_msg.buttons[14] and not self.last_dpad_msg["buttons"][14]:
+                dpad_x = -1.0
 
         new_focus = None
         if dpad_y > 0.5 and self.last_dpad_msg["y"] <= 0.5:
@@ -137,7 +154,6 @@ class JointTrajectoryController(BaseController):
                 self.node.controller_manager.trigger_llc_sync()
             self.node.gamepad_feedback.send_feedback(intensity=0.5)
 
-
     def process_input(self, msg):
         """Processes joystick input, integrates over dt, and clamps the commanded positions."""
         # Focus selection is independent of deadman in HLC mode
@@ -149,10 +165,26 @@ class JointTrajectoryController(BaseController):
         deadzone = 0.1
 
         # Determine which axes are currently dominant
-        left_x = msg.axes[self.node.axis_mapping["left_joystick"]["x"]] if len(msg.axes) > self.node.axis_mapping["left_joystick"]["x"] else 0.0
-        left_y = msg.axes[self.node.axis_mapping["left_joystick"]["y"]] if len(msg.axes) > self.node.axis_mapping["left_joystick"]["y"] else 0.0
-        right_x = msg.axes[self.node.axis_mapping["right_joystick"]["x"]] if len(msg.axes) > self.node.axis_mapping["right_joystick"]["x"] else 0.0
-        right_y = msg.axes[self.node.axis_mapping["right_joystick"]["y"]] if len(msg.axes) > self.node.axis_mapping["right_joystick"]["y"] else 0.0
+        left_x = (
+            msg.axes[self.node.axis_mapping["left_joystick"]["x"]]
+            if len(msg.axes) > self.node.axis_mapping["left_joystick"]["x"]
+            else 0.0
+        )
+        left_y = (
+            msg.axes[self.node.axis_mapping["left_joystick"]["y"]]
+            if len(msg.axes) > self.node.axis_mapping["left_joystick"]["y"]
+            else 0.0
+        )
+        right_x = (
+            msg.axes[self.node.axis_mapping["right_joystick"]["x"]]
+            if len(msg.axes) > self.node.axis_mapping["right_joystick"]["x"]
+            else 0.0
+        )
+        right_y = (
+            msg.axes[self.node.axis_mapping["right_joystick"]["y"]]
+            if len(msg.axes) > self.node.axis_mapping["right_joystick"]["y"]
+            else 0.0
+        )
 
         self._update_dominant_axes(left_x, left_y, right_x, right_y, deadzone)
 
@@ -167,7 +199,6 @@ class JointTrajectoryController(BaseController):
             if not self.node.deadman_active:
                 continue
 
-
             commanded_positions = self.topic_to_commanded_positions[topic]
             for i, joint_name in enumerate(joint_names):
                 axis_val = 0.0
@@ -176,16 +207,32 @@ class JointTrajectoryController(BaseController):
                 # Joint Mapping
                 if i == 0:
                     axis_val = left_x
-                    if self.active_axes["left_joystick"]["y"] and not self.active_axes["left_joystick"]["x"]: effective_deadzone = self.dominant_axis_threshold
+                    if (
+                        self.active_axes["left_joystick"]["y"]
+                        and not self.active_axes["left_joystick"]["x"]
+                    ):
+                        effective_deadzone = self.dominant_axis_threshold
                 elif i == 1:
                     axis_val = left_y
-                    if self.active_axes["left_joystick"]["x"] and not self.active_axes["left_joystick"]["y"]: effective_deadzone = self.dominant_axis_threshold
+                    if (
+                        self.active_axes["left_joystick"]["x"]
+                        and not self.active_axes["left_joystick"]["y"]
+                    ):
+                        effective_deadzone = self.dominant_axis_threshold
                 elif i == 2:
                     axis_val = right_y
-                    if self.active_axes["right_joystick"]["x"] and not self.active_axes["right_joystick"]["y"]: effective_deadzone = self.dominant_axis_threshold
+                    if (
+                        self.active_axes["right_joystick"]["x"]
+                        and not self.active_axes["right_joystick"]["y"]
+                    ):
+                        effective_deadzone = self.dominant_axis_threshold
                 elif i == 3:
                     axis_val = right_x
-                    if self.active_axes["right_joystick"]["y"] and not self.active_axes["right_joystick"]["x"]: effective_deadzone = self.dominant_axis_threshold
+                    if (
+                        self.active_axes["right_joystick"]["y"]
+                        and not self.active_axes["right_joystick"]["x"]
+                    ):
+                        effective_deadzone = self.dominant_axis_threshold
                 elif i == 4:
                     left_trigger = msg.axes[self.node.axis_mapping["triggers"]["left"]]
                     right_trigger = msg.axes[self.node.axis_mapping["triggers"]["right"]]
@@ -193,16 +240,21 @@ class JointTrajectoryController(BaseController):
                 elif i == 5:
                     move_left = msg.buttons[self.node.button_mapping["wrist_rotation_left"]] == 1
                     move_right = msg.buttons[self.node.button_mapping["wrist_rotation_right"]] == 1
-                    if move_left: axis_val = -1.0
-                    elif move_right: axis_val = 1.0
-
+                    if move_left:
+                        axis_val = -1.0
+                    elif move_right:
+                        axis_val = 1.0
 
                 if abs(axis_val) > effective_deadzone:
-                    current_position = self.duatic_robots_helper.get_joint_value_from_states(joint_name)
+                    current_position = self.duatic_robots_helper.get_joint_value_from_states(
+                        joint_name
+                    )
                     commanded_positions[i] += axis_val * self.node.dt
                     offset = commanded_positions[i] - current_position
                     if abs(offset) > self.joint_pos_offset_tolerance:
-                        commanded_positions[i] = current_position + math.copysign(self.joint_pos_offset_tolerance, offset)
+                        commanded_positions[i] = current_position + math.copysign(
+                            self.joint_pos_offset_tolerance, offset
+                        )
                         self.node.gamepad_feedback.send_feedback(intensity=1.0)
                     any_axis_active = True
 
@@ -214,14 +266,21 @@ class JointTrajectoryController(BaseController):
             for topic, publisher in self.joint_trajectory_publishers.items():
                 arm_name = self.get_arm_from_topic(topic)
                 if arm_name == self.focused_component:
-                    self.publish_joint_trajectory(self.topic_to_commanded_positions[topic], publisher, self.topic_to_joint_names[topic])
+                    self.publish_joint_trajectory(
+                        self.topic_to_commanded_positions[topic],
+                        publisher,
+                        self.topic_to_joint_names[topic],
+                    )
         elif not any_axis_active and not self.is_joystick_idle:
             for topic, publisher in self.joint_trajectory_publishers.items():
                 arm_name = self.get_arm_from_topic(topic)
                 if arm_name == self.focused_component:
-                    self.publish_joint_trajectory(self.topic_to_commanded_positions[topic], publisher, self.topic_to_joint_names[topic])
+                    self.publish_joint_trajectory(
+                        self.topic_to_commanded_positions[topic],
+                        publisher,
+                        self.topic_to_joint_names[topic],
+                    )
             self.is_joystick_idle = True
-
 
     def publish_joint_trajectory(
         self, target_positions, publisher, joint_names, speed_percentage=1.0
@@ -260,5 +319,3 @@ class JointTrajectoryController(BaseController):
         self.active_axes["left_joystick"]["y"] = abs(left_y) > deadzone
         self.active_axes["right_joystick"]["x"] = abs(right_x) > deadzone
         self.active_axes["right_joystick"]["y"] = abs(right_y) > deadzone
-
-

@@ -135,7 +135,6 @@ class GamepadInterface(Node):
             if current_controller is not None:
                 current_controller.reset()
 
-
         # Check for move commands (only if deadman is active)
         if self.deadman_active:
             move_home_pressed = msg.buttons[self.button_mapping["move_home"]]
@@ -188,7 +187,6 @@ class GamepadInterface(Node):
             else:
                 # Pass deadman state so controller knows if it can move
                 current_controller.process_input(msg)
-
 
 
 def main(args=None):

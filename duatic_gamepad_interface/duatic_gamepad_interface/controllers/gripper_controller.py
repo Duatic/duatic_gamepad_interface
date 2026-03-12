@@ -37,7 +37,7 @@ class GripperController(BaseController):
 
         self.needed_low_level_controllers = ["gripper_controller"]
         self.gripper_topic_suffix = "gripper_controller/commands"
-        
+
         # Dictionary to store publishers: {component_name: publisher}
         self.gripper_publishers = {}
         self._setup_gripper_publishers()
@@ -65,7 +65,9 @@ class GripperController(BaseController):
                             Float64MultiArray, topic, qos_profile
                         )
                         self._gripper_states[component] = False
-                        self.node.get_logger().info(f"Gripper publisher created for {component} on {topic}")
+                        self.node.get_logger().info(
+                            f"Gripper publisher created for {component} on {topic}"
+                        )
                         found_any = True
 
             # If we already have some publishers, we can be more lenient, but let's try to find all possible ones
@@ -77,7 +79,6 @@ class GripperController(BaseController):
 
             rclpy.spin_once(self.node, timeout_sec=0.2)
             retry_count += 1
-
 
     def send_gripper_command(self, component, position: float):
         """Send a command to a specific gripper."""
@@ -100,9 +101,9 @@ class GripperController(BaseController):
         current_hlc = self.node.controller_manager.get_current_controller()
         if not current_hlc:
             return
-        
+
         focus = current_hlc.get_focus()
-        
+
         # Toggle gripper state with button 0
         if hasattr(joy_msg, "buttons") and len(joy_msg.buttons) > 0:
             button_pressed = bool(joy_msg.buttons[0])
@@ -113,4 +114,3 @@ class GripperController(BaseController):
                 position = 1.0 if is_open else 0.0
                 self.send_gripper_command(focus, position)
             self._last_button_state = button_pressed
-

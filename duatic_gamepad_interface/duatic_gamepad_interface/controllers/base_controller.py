@@ -65,4 +65,3 @@ class BaseController:
         elif "hip" in topic:
             return "hip"
         return ""
-
