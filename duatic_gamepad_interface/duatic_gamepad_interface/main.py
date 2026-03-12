@@ -184,7 +184,6 @@ class GamepadInterface(Node):
                 # Pass deadman state so controller knows if it can move
                 current_controller.process_input(msg)
 
-
     def _stop_move_commands(self):
         """Stop move_home and move_sleep commands and reset controller."""
         self.move_home_pub.publish(Bool(data=False))

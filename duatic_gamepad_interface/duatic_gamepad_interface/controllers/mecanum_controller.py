@@ -68,12 +68,14 @@ class MecanumController(BaseController):
         """Returns the names of low-level controllers needed for mecanum mode."""
         # Standard drive controller is always needed
         needed = list(self.base_needed_llcs)
-        
+
         # Only add freeze controllers that actually exist in the system and are for arm/hip
         # Use the helper to find the full names of existing instances matching our patterns
-        available_freezes = self.duatic_controller_helper.get_all_controllers(self.potential_freeze_llcs)
+        available_freezes = self.duatic_controller_helper.get_all_controllers(
+            self.potential_freeze_llcs
+        )
         needed.extend(available_freezes)
-                
+
         return needed
 
     def _is_valid_float(self, value):

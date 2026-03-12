@@ -268,7 +268,9 @@ class ControllerManager:
         # If freeze is active, we do NOT switch low-level controllers now.
         # We wait until freeze is deactivated and then sync.
         if self.is_freeze_active:
-            self.node.get_logger().info("E-Stop active: Deferring low-level controller switch until deactivated.")
+            self.node.get_logger().info(
+                "E-Stop active: Deferring low-level controller switch until deactivated."
+            )
             return
 
         matching_controllers = self.duatic_controller_helper.get_all_controllers(
