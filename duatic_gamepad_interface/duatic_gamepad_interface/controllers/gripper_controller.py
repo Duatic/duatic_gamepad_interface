@@ -54,7 +54,6 @@ class GripperController(BaseController):
 
         while retry_count < max_retries:
             all_topics = [t[0] for t in self.node.get_topic_names_and_types()]
-            found_any = False
 
             for topic in all_topics:
                 if topic.endswith(self.gripper_topic_suffix):
@@ -68,7 +67,6 @@ class GripperController(BaseController):
                         self.node.get_logger().info(
                             f"Gripper publisher created for {component} on {topic}"
                         )
-                        found_any = True
 
             # If we already have some publishers, we can be more lenient, but let's try to find all possible ones
             # For now, if we found at least one or enough retries passed, we continue
