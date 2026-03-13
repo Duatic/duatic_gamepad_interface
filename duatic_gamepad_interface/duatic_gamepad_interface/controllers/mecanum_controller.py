@@ -32,6 +32,7 @@ class MecanumController(BaseController):
 
     def __init__(self, node, duatic_robots_helper):
         super().__init__(node, duatic_robots_helper)
+        self.needed_capabilities = ["mobility"]
         self.node.get_logger().info("Initializing mecanum controller.")
 
         self.base_needed_llcs = ["mecanum_drive_controller"]

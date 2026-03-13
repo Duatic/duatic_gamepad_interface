@@ -35,6 +35,7 @@ class GripperController(BaseController):
     def __init__(self, node, duatic_robots_helper):
         super().__init__(node, duatic_robots_helper)
 
+        self.needed_capabilities = ["manipulation"]
         self.needed_low_level_controllers = ["gripper_controller"]
         self.gripper_topic_suffix = "gripper_controller/commands"
 

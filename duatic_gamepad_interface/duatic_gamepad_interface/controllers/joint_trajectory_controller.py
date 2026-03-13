@@ -31,6 +31,7 @@ class JointTrajectoryController(BaseController):
 
     def __init__(self, node, duatic_robots_helper):
         super().__init__(node, duatic_robots_helper)
+        self.needed_capabilities = ["manipulation"]
         self.node.get_logger().info("Initializing joint trajectory controller.")
 
         # Discover all relevant components

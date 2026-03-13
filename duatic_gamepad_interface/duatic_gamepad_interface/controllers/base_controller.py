@@ -32,7 +32,7 @@ class BaseController:
     def __init__(self, node, duatic_robots_helper: DuaticRobotsHelper):
         self.node = node
         self.log_printed = False  # Track whether the log was printed
-        self.needed_low_level_controllers = None
+        self.needed_capabilities = []
         self.joint_pos_offset_tolerance = 0.1
 
         self.duatic_robots_helper = duatic_robots_helper

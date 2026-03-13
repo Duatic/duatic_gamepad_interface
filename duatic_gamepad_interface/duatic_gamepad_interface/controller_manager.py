@@ -39,6 +39,7 @@ class ControllerManager:
 
     def __init__(self, node, duatic_robots_helper: DuaticRobotsHelper):
         self.node = node
+        self.duatic_robots_helper = duatic_robots_helper
 
         self.active_high_level_controller_index = -1
         self.active_low_level_controllers = []
@@ -65,9 +66,24 @@ class ControllerManager:
 
         self.node.create_timer(0.2, self.check_active_low_level_controllers)
 
+    # Policy: Map robot morphology to supported features
+    CAPABILITY_MAPPING = {
+        "mobile_manipulator": ["mobility", "manipulation", "freedrive"],
+        "multi_arm": ["manipulation", "freedrive"],
+        "mobile_base": ["mobility"],
+        "single_arm": ["manipulation", "freedrive"],
+    }
+
     def _filter_available_controllers(self):
         """Check which controllers are available and filter out unavailable ones."""
         self.node.get_logger().info("Checking controller availability...")
+
+        # Get the morphology from the source of truth (Helper)
+        robot_structure = self.duatic_robots_helper.robot_structure
+        supported_capabilities = self.CAPABILITY_MAPPING.get(robot_structure, [])
+        self.node.get_logger().info(
+            f"Robot morphology: {robot_structure}, Supported capabilities: {supported_capabilities}"
+        )
 
         # Get all available low-level controllers from the system
         self.duatic_controller_helper.wait_for_controller_data()
@@ -84,6 +100,17 @@ class ControllerManager:
 
         for idx, controller in self.all_potential_controllers.items():
             controller_name = controller.__class__.__name__
+
+            # Check if robot has the required capabilities for this high-level controller
+            if hasattr(controller, "needed_capabilities"):
+                missing_capabilities = [
+                    c for c in controller.needed_capabilities if c not in supported_capabilities
+                ]
+                if missing_capabilities:
+                    self.node.get_logger().debug(
+                        f"❌ {controller_name} - Morphology skip (missing capabilities: {missing_capabilities})"
+                    )
+                    continue
 
             if hasattr(controller, "get_low_level_controllers"):
                 required_controllers = controller.get_low_level_controllers()
