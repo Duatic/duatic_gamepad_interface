@@ -22,7 +22,7 @@ ros2 run duatic_gamepad_interface gamepad_interface
 
 ## ⚖️ License
 
-The contents are licensed under the BSD-3-Clause [license](LICENSE).  
+The contents are licensed under the BSD-3-Clause [license](LICENSE).
 Images in this repository are to be licensed separately if you want to use them for any other usecase than forking this repository. Please open an issue in order to get in touch with us.
 
 ## 🤝 Contributing
