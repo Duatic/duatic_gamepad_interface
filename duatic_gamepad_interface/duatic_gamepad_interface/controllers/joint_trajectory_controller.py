@@ -201,9 +201,8 @@ class JointTrajectoryController(BaseController):
 
             self.topic_to_commanded_positions[topic] = commanded_positions
 
-        # Publish
-        if any_axis_active:
-            self.is_joystick_idle = False
+        # Publish if active or if this is the first idle frame (to send the final state)
+        if any_axis_active or not self.is_joystick_idle:
             for topic, publisher in self.joint_trajectory_publishers.items():
                 arm_name = self.get_arm_from_topic(topic)
                 if arm_name == self.focused_component:
@@ -212,16 +211,9 @@ class JointTrajectoryController(BaseController):
                         publisher,
                         self.topic_to_joint_names[topic],
                     )
-        elif not any_axis_active and not self.is_joystick_idle:
-            for topic, publisher in self.joint_trajectory_publishers.items():
-                arm_name = self.get_arm_from_topic(topic)
-                if arm_name == self.focused_component:
-                    self.publish_joint_trajectory(
-                        self.topic_to_commanded_positions[topic],
-                        publisher,
-                        self.topic_to_joint_names[topic],
-                    )
-            self.is_joystick_idle = True
+            
+            # Update idle state: if no axis was active, we are now idle
+            self.is_joystick_idle = not any_axis_active
 
     def publish_joint_trajectory(
         self, target_positions, publisher, joint_names, speed_percentage=1.0
