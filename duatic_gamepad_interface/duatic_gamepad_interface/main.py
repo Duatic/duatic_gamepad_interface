@@ -252,9 +252,10 @@ class GamepadInterface(Node):
             current_controller = self.controller_manager.get_current_controller()
             if current_controller:
                 # Check if component exists in the robot
-                all_components = self.duatic_robots_helper.get_component_names("arm") + \
-                                 self.duatic_robots_helper.get_component_names("hip")
-                
+                all_components = self.duatic_robots_helper.get_component_names(
+                    "arm"
+                ) + self.duatic_robots_helper.get_component_names("hip")
+
                 # Special case for "platform" which might be handled by mecanum
                 if new_focus in all_components or new_focus == "platform":
                     self.get_logger().info(f"Switching focus to: {new_focus}")

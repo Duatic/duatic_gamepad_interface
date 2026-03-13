@@ -179,8 +179,12 @@ class JointTrajectoryController(BaseController):
                         right_trigger = msg.axes[self.node.axis_mapping["triggers"]["right"]]
                         axis_val = right_trigger - left_trigger
                     case 5:
-                        move_left = msg.buttons[self.node.button_mapping["wrist_rotation_left"]] == 1
-                        move_right = msg.buttons[self.node.button_mapping["wrist_rotation_right"]] == 1
+                        move_left = (
+                            msg.buttons[self.node.button_mapping["wrist_rotation_left"]] == 1
+                        )
+                        move_right = (
+                            msg.buttons[self.node.button_mapping["wrist_rotation_right"]] == 1
+                        )
                         if move_left:
                             axis_val = -1.0
                         elif move_right:
@@ -211,7 +215,7 @@ class JointTrajectoryController(BaseController):
                         publisher,
                         self.topic_to_joint_names[topic],
                     )
-            
+
             # Update idle state: if no axis was active, we are now idle
             self.is_joystick_idle = not any_axis_active
 
