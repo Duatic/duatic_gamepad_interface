@@ -48,7 +48,6 @@ class JointTrajectoryController(BaseController):
             self.topic_to_commanded_positions[topic] = [0.0] * len(joint_names)
 
         # Focus management
-        self.last_dpad_msg = {"x": 0.0, "y": 0.0, "buttons": [0] * 15}
         self.focused_component = (
             "arm_left"
             if "arm_left" in self.all_components
@@ -98,67 +97,8 @@ class JointTrajectoryController(BaseController):
                 joint_states.get(joint, 0.0) for joint in joint_names
             ]
 
-    def _update_focus(self, joy_msg):
-        """Update focus based on D-Pad input (axes 6,7 or buttons 11-14)."""
-        dpad_x = 0.0
-        dpad_y = (
-            1.0
-            if (
-                len(joy_msg.buttons) > 11
-                and joy_msg.buttons[11]
-                and not self.last_dpad_msg["buttons"][11]
-            )
-            else (0.0)
-        )
-
-        # Check Axes 6/7 (Standard for many controllers)
-        if len(joy_msg.axes) > 7:
-            if abs(joy_msg.axes[6]) > 0.5:
-                dpad_x = joy_msg.axes[6]
-            if abs(joy_msg.axes[7]) > 0.5:
-                dpad_y = joy_msg.axes[7]
-
-        # Check Buttons (Fallback or overlay)
-        # 11=Up, 12=Down, 13=Left, 14=Right
-        if len(joy_msg.buttons) > 14:
-            if joy_msg.buttons[11] and not self.last_dpad_msg["buttons"][11]:
-                dpad_y = 1.0
-            if joy_msg.buttons[12] and not self.last_dpad_msg["buttons"][12]:
-                dpad_y = -1.0
-            if joy_msg.buttons[13] and not self.last_dpad_msg["buttons"][13]:
-                dpad_x = 1.0
-            if joy_msg.buttons[14] and not self.last_dpad_msg["buttons"][14]:
-                dpad_x = -1.0
-
-        new_focus = None
-        if dpad_y > 0.5 and self.last_dpad_msg["y"] <= 0.5:
-            new_focus = "hip"
-        elif dpad_y < -0.5 and self.last_dpad_msg["y"] >= -0.5:
-            new_focus = "platform"
-        elif dpad_x > 0.5 and self.last_dpad_msg["x"] <= 0.5:
-            new_focus = "arm_left"
-        elif dpad_x < -0.5 and self.last_dpad_msg["x"] >= -0.5:
-            new_focus = "arm_right"
-
-        self.last_dpad_msg["x"] = dpad_x
-        self.last_dpad_msg["y"] = dpad_y
-        if len(joy_msg.buttons) > 14:
-            self.last_dpad_msg["buttons"] = list(joy_msg.buttons)
-
-        if new_focus and new_focus in self.all_components:
-            self.node.get_logger().info(f"Switching focus to: {new_focus}")
-            self.focused_component = new_focus
-            self.reset()
-            # Trigger LLC sync through main controller manager
-            if hasattr(self.node, "controller_manager"):
-                self.node.controller_manager.trigger_llc_sync()
-            self.node.gamepad_feedback.send_feedback(intensity=0.5)
-
     def process_input(self, msg):
         """Processes joystick input, integrates over dt, and clamps the commanded positions."""
-        # Focus selection is independent of deadman in HLC mode
-        self._update_focus(msg)
-
         super().process_input(msg)
 
         any_axis_active = False

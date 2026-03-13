@@ -71,6 +71,8 @@ class GamepadInterface(Node):
         # Load configurations
         self.button_mapping = config["button_mapping"]
         self.axis_mapping = config["axis_mapping"]
+        self.dpad_mapping = config.get("dpad_mapping", {})
+        self.last_dpad_state = {"x": 0.0, "y": 0.0, "buttons": {}}
         self.get_logger().info(f"Loaded gamepad config: {self.button_mapping}, {self.axis_mapping}")
 
         self.duatic_robots_helper = DuaticRobotsHelper(self)
@@ -108,6 +110,9 @@ class GamepadInterface(Node):
 
         if msg is None:
             return
+
+        # Handle focus switching (independent of deadman)
+        self._update_focus(msg)
 
         # Check deadman switch and track state changes
         current_deadman_state = msg.buttons[self.button_mapping["dead_man_switch"]] == 1
@@ -181,6 +186,82 @@ class GamepadInterface(Node):
         current_controller = self.controller_manager.get_current_controller()
         if current_controller is not None:
             current_controller.reset()
+
+    def _update_focus(self, joy_msg):
+        """Update focus based on D-Pad input from config/gamepad_config.yaml."""
+        if not self.dpad_mapping:
+            return
+
+        dpad_x = 0.0
+        dpad_y = 0.0
+
+        # Check Axes (Standard for Xbox/Hat-Switch D-Pads)
+        axes_cfg = self.dpad_mapping.get("axes", {})
+        ax_x = axes_cfg.get("x")
+        ax_y = axes_cfg.get("y")
+
+        if ax_x is not None and len(joy_msg.axes) > ax_x:
+            if abs(joy_msg.axes[ax_x]) > 0.5:
+                dpad_x = joy_msg.axes[ax_x]
+        if ax_y is not None and len(joy_msg.axes) > ax_y:
+            if abs(joy_msg.axes[ax_y]) > 0.5:
+                dpad_y = joy_msg.axes[ax_y]
+
+        # Check Buttons (Standard for PS4/PS5 D-Pads)
+        btns_cfg = self.dpad_mapping.get("buttons", {})
+        up_idx = btns_cfg.get("up")
+        down_idx = btns_cfg.get("down")
+        left_idx = btns_cfg.get("left")
+        right_idx = btns_cfg.get("right")
+
+        def btn_pressed(idx):
+            if idx is None or len(joy_msg.buttons) <= idx:
+                return False
+            return joy_msg.buttons[idx] == 1 and self.last_dpad_state["buttons"].get(idx, 0) == 0
+
+        if btn_pressed(up_idx):
+            dpad_y = 1.0
+        if btn_pressed(down_idx):
+            dpad_y = -1.0
+        if btn_pressed(left_idx):
+            dpad_x = 1.0
+        if btn_pressed(right_idx):
+            dpad_x = -1.0
+
+        # Determine target focus
+        targets = self.dpad_mapping.get("focus_targets", {})
+        new_focus = None
+
+        if dpad_y > 0.5 and self.last_dpad_state["y"] <= 0.5:
+            new_focus = targets.get("up")
+        elif dpad_y < -0.5 and self.last_dpad_state["y"] >= -0.5:
+            new_focus = targets.get("down")
+        elif dpad_x > 0.5 and self.last_dpad_state["x"] <= 0.5:
+            new_focus = targets.get("left")
+        elif dpad_x < -0.5 and self.last_dpad_state["x"] >= -0.5:
+            new_focus = targets.get("right")
+
+        # Update last state
+        self.last_dpad_state["x"] = dpad_x
+        self.last_dpad_state["y"] = dpad_y
+        for key, idx in btns_cfg.items():
+            if idx is not None and len(joy_msg.buttons) > idx:
+                self.last_dpad_state["buttons"][idx] = joy_msg.buttons[idx]
+
+        if new_focus:
+            current_controller = self.controller_manager.get_current_controller()
+            if current_controller:
+                # Check if component exists in the robot
+                all_components = self.duatic_robots_helper.get_component_names("arm") + \
+                                 self.duatic_robots_helper.get_component_names("hip")
+                
+                # Special case for "platform" which might be handled by mecanum
+                if new_focus in all_components or new_focus == "platform":
+                    self.get_logger().info(f"Switching focus to: {new_focus}")
+                    current_controller.set_focus(new_focus)
+                    current_controller.reset()
+                    self.controller_manager.trigger_llc_sync()
+                    self.gamepad_feedback.send_feedback(intensity=0.5)
 
 
 def main(args=None):

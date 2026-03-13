@@ -43,3 +43,19 @@ gamepad_node:
       triggers:
         left: 4
         right: 5
+    dpad_mapping:
+      # Some controllers (e.g. Xbox) report D-Pad as axes (Hat Switch)
+      axes:
+        x: 6
+        y: 7
+      # Some controllers (e.g. PS4/PS5) report D-Pad as individual buttons
+      buttons:
+        up: 11
+        down: 12
+        left: 13
+        right: 14
+      focus_targets:
+        up: "hip"
+        down: "platform"
+        left: "arm_right"
+        right: "arm_left"
