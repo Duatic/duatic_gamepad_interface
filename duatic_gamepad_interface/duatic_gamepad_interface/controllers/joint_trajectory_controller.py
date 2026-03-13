@@ -145,45 +145,46 @@ class JointTrajectoryController(BaseController):
                 effective_deadzone = deadzone
 
                 # Joint Mapping
-                if i == 0:
-                    axis_val = left_x
-                    if (
-                        self.active_axes["left_joystick"]["y"]
-                        and not self.active_axes["left_joystick"]["x"]
-                    ):
-                        effective_deadzone = self.dominant_axis_threshold
-                elif i == 1:
-                    axis_val = left_y
-                    if (
-                        self.active_axes["left_joystick"]["x"]
-                        and not self.active_axes["left_joystick"]["y"]
-                    ):
-                        effective_deadzone = self.dominant_axis_threshold
-                elif i == 2:
-                    axis_val = right_y
-                    if (
-                        self.active_axes["right_joystick"]["x"]
-                        and not self.active_axes["right_joystick"]["y"]
-                    ):
-                        effective_deadzone = self.dominant_axis_threshold
-                elif i == 3:
-                    axis_val = right_x
-                    if (
-                        self.active_axes["right_joystick"]["y"]
-                        and not self.active_axes["right_joystick"]["x"]
-                    ):
-                        effective_deadzone = self.dominant_axis_threshold
-                elif i == 4:
-                    left_trigger = msg.axes[self.node.axis_mapping["triggers"]["left"]]
-                    right_trigger = msg.axes[self.node.axis_mapping["triggers"]["right"]]
-                    axis_val = right_trigger - left_trigger
-                elif i == 5:
-                    move_left = msg.buttons[self.node.button_mapping["wrist_rotation_left"]] == 1
-                    move_right = msg.buttons[self.node.button_mapping["wrist_rotation_right"]] == 1
-                    if move_left:
-                        axis_val = -1.0
-                    elif move_right:
-                        axis_val = 1.0
+                match i:
+                    case 0:
+                        axis_val = left_x
+                        if (
+                            self.active_axes["left_joystick"]["y"]
+                            and not self.active_axes["left_joystick"]["x"]
+                        ):
+                            effective_deadzone = self.dominant_axis_threshold
+                    case 1:
+                        axis_val = left_y
+                        if (
+                            self.active_axes["left_joystick"]["x"]
+                            and not self.active_axes["left_joystick"]["y"]
+                        ):
+                            effective_deadzone = self.dominant_axis_threshold
+                    case 2:
+                        axis_val = right_y
+                        if (
+                            self.active_axes["right_joystick"]["x"]
+                            and not self.active_axes["right_joystick"]["y"]
+                        ):
+                            effective_deadzone = self.dominant_axis_threshold
+                    case 3:
+                        axis_val = right_x
+                        if (
+                            self.active_axes["right_joystick"]["y"]
+                            and not self.active_axes["right_joystick"]["x"]
+                        ):
+                            effective_deadzone = self.dominant_axis_threshold
+                    case 4:
+                        left_trigger = msg.axes[self.node.axis_mapping["triggers"]["left"]]
+                        right_trigger = msg.axes[self.node.axis_mapping["triggers"]["right"]]
+                        axis_val = right_trigger - left_trigger
+                    case 5:
+                        move_left = msg.buttons[self.node.button_mapping["wrist_rotation_left"]] == 1
+                        move_right = msg.buttons[self.node.button_mapping["wrist_rotation_right"]] == 1
+                        if move_left:
+                            axis_val = -1.0
+                        elif move_right:
+                            axis_val = 1.0
 
                 if abs(axis_val) > effective_deadzone:
                     current_position = self.duatic_robots_helper.get_joint_value_from_states(
