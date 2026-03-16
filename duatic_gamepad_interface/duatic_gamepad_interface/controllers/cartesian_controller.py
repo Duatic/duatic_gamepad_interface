@@ -42,7 +42,6 @@ class CartesianController(BaseController):
         self.ee_frame = "flange"
         self.current_pose = None
         self.scale = 0.05
-        self.mirror = self.node.get_parameter("mirror").get_parameter_value().bool_value
 
         self.needed_low_level_controllers = [
             "cartesian_pose_controller",
@@ -67,7 +66,7 @@ class CartesianController(BaseController):
 
         if len(self.arms) >= 2:
             self.base_frame = "tbase"
-            self.pin_helper = DuaticPinocchioHelper(self.node, robot_type="Alpha")
+            self.pin_helper = DuaticPinocchioHelper(self.node)  # Product-agnostic
         else:
             self.base_frame = "world"
             self.pin_helper = DuaticPinocchioHelper(self.node)
@@ -147,36 +146,18 @@ class CartesianController(BaseController):
 
             arm_name = self.get_arm_from_topic(topic)
 
-            if not self.mirror and arm_name == "arm_right":
+            if arm_name != self.focused_component:
                 continue
 
-            # Apply mirroring for right arm if mirror is enabled
-            if self.mirror and arm_name == "arm_right":
-                # Mirror the Y-axis movement and yaw rotation for the right arm
-                mirror_lx = lx
-                mirror_ly = -ly  # Mirror Y movement
-                mirror_lz = lz
-                mirror_d_roll = d_roll
-                mirror_pitch = pitch
-                mirror_yaw = -yaw  # Mirror yaw rotation
-            else:
-                # Use original values for left arm or when mirroring is disabled
-                mirror_lx = lx
-                mirror_ly = ly
-                mirror_lz = lz
-                mirror_d_roll = d_roll
-                mirror_pitch = pitch
-                mirror_yaw = yaw
-
             # Update Position
-            current_pose.pose.position.x += mirror_lx * linear_speed * self.scale
-            current_pose.pose.position.y += mirror_ly * linear_speed * self.scale
-            current_pose.pose.position.z += mirror_lz * linear_speed * self.scale
+            current_pose.pose.position.x += lx * linear_speed * self.scale
+            current_pose.pose.position.y += ly * linear_speed * self.scale
+            current_pose.pose.position.z += lz * linear_speed * self.scale
 
             # Update Orientation (Apply Incremental Rotations)
-            d_roll_scaled = mirror_d_roll * angular_speed * self.scale
-            pitch_scaled = mirror_pitch * angular_speed * self.scale
-            yaw_scaled = mirror_yaw * angular_speed * self.scale
+            d_roll_scaled = d_roll * angular_speed * self.scale
+            pitch_scaled = pitch * angular_speed * self.scale
+            yaw_scaled = yaw * angular_speed * self.scale
 
             q_roll = quaternion_from_euler(d_roll_scaled, 0, 0)
             q_pitch = quaternion_from_euler(0, pitch_scaled, 0)

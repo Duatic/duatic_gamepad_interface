@@ -22,23 +22,25 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 from duatic_gamepad_interface.controllers.base_controller import BaseController
+import math
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 
 class JointTrajectoryController(BaseController):
     """Handles joint trajectory control using the gamepad"""
 
-    MIRRORED_BASES = {"shoulder_rotation", "forearm_rotation", "wrist_rotation"}
-
     def __init__(self, node, duatic_robots_helper):
         super().__init__(node, duatic_robots_helper)
+        self.needed_capabilities = ["manipulation"]
         self.node.get_logger().info("Initializing joint trajectory controller.")
 
-        self.needed_low_level_controllers = ["joint_trajectory_controller"]
-
+        # Discover all relevant components
         self.arms = self.duatic_robots_helper.get_component_names("arm")
+        self.hips = self.duatic_robots_helper.get_component_names("hip")
+        self.all_components = self.arms + self.hips
+
         found_topics = self.duatic_jtc_helper.find_topics_for_controller(
-            "joint_trajectory_controller", "joint_trajectory", self.arms
+            "joint_trajectory_controller", "joint_trajectory", self.all_components
         )
         response = self.duatic_jtc_helper.process_topics_and_extract_joint_names(found_topics)
         self.topic_to_joint_names = response[0]
@@ -46,76 +48,64 @@ class JointTrajectoryController(BaseController):
         for topic, joint_names in self.topic_to_joint_names.items():
             self.topic_to_commanded_positions[topic] = [0.0] * len(joint_names)
 
-        # Build mirrored joints: collect all joints across all topics first
-        self.mirror = self.node.get_parameter("mirror").get_parameter_value().bool_value
-        self.mirrored_joints = []
-        self._build_mirrored_joints()
+        # Focus management
+        self.focused_component = (
+            "arm_left"
+            if "arm_left" in self.all_components
+            else (self.all_components[0] if self.all_components else "")
+        )
 
         # Create publishers for each joint trajectory topic
         self.joint_trajectory_publishers = {}
-
         for topic in self.topic_to_joint_names.keys():
             self.joint_trajectory_publishers[topic] = self.node.create_publisher(
                 JointTrajectory, topic, 10
             )
-            self.node.get_logger().debug(f"Created publisher for topic: {topic}")
 
         self.prefix_to_joints = {}
         self.is_joystick_idle = True
 
-        # Dominant axis tracking for smoother joystick control
-        self.dominant_axis_threshold = 0.6  # Higher threshold for non-dominant axis
+        # Dominant axis tracking
+        self.dominant_axis_threshold = 0.6
         self.active_axes = {
             "left_joystick": {"x": False, "y": False},
             "right_joystick": {"x": False, "y": False},
         }
 
-        if self.mirrored_joints:
-            self.node.get_logger().info(f"Mirrored joints: {self.mirrored_joints}")
-
         self.node.get_logger().info("Joint Trajectory Controller initialized.")
+
+    def get_low_level_controllers(self):
+        """Returns all discovered JTC controller names to keep them active simultaneously."""
+        controllers = []
+        for topic in self.topic_to_joint_names.keys():
+            # Extract the controller name part from the topic
+            # e.g., '/joint_trajectory_controller_arm_left/joint_trajectory' -> 'joint_trajectory_controller_arm_left'
+            segments = topic.strip("/").split("/")
+            if len(segments) >= 2:
+                controllers.append(segments[-2])
+
+        if not controllers:
+            return ["joint_trajectory_controller"]
+
+        return controllers
 
     def reset(self):
         """Reset commanded positions to current joint states for all topics."""
-        joint_states = self.duatic_robots_helper.get_joint_states()  # Returns a dict
+        joint_states = self.duatic_robots_helper.get_joint_states()
 
         for topic, joint_names in self.topic_to_joint_names.items():
-            # Reset commanded positions to current joint positions
             self.topic_to_commanded_positions[topic] = [
                 joint_states.get(joint, 0.0) for joint in joint_names
             ]
 
-    def _build_mirrored_joints(self):
-        """Build list of joints that should be mirrored based on MIRRORED_BASES."""
-        # Collect all joints from all topics
-        all_joints = []
-        for joint_names in self.topic_to_joint_names.values():
-            all_joints.extend(joint_names)
-
-        # For each base, find matching joints across all topics
-        for base in self.MIRRORED_BASES:
-            found = []
-            for joint in all_joints:
-                # Accept both arm_left/shoulder_rotation and arm_left_shoulder_rotation
-                if joint.endswith("/" + base) or joint.endswith("_" + base) or joint == base:
-                    found.append(joint)
-
-            if len(found) == 2:
-                # Pick one to mirror (e.g. the one with the "higher" prefix)
-                found_sorted = sorted(found)
-                self.mirrored_joints.append(found_sorted[1])  # Mirror the second one (arm_right)
-                self.node.get_logger().debug(
-                    f"Mirroring joint {found_sorted[1]} based on {found_sorted[0]}"
-                )
-
     def process_input(self, msg):
         """Processes joystick input, integrates over dt, and clamps the commanded positions."""
-        super().process_input(msg)  # For any base logging logic
+        super().process_input(msg)
 
         any_axis_active = False
         deadzone = 0.1
 
-        # Get raw joystick values for dominant axis calculation
+        # Determine which axes are currently dominant
         left_x = (
             msg.axes[self.node.axis_mapping["left_joystick"]["x"]]
             if len(msg.axes) > self.node.axis_mapping["left_joystick"]["x"]
@@ -137,15 +127,17 @@ class JointTrajectoryController(BaseController):
             else 0.0
         )
 
-        # Determine which axes are currently dominant
         self._update_dominant_axes(left_x, left_y, right_x, right_y, deadzone)
 
-        # Process each topic (arm/controller) independently
+        # Process each topic
         for topic, joint_names in self.topic_to_joint_names.items():
             arm_name = self.get_arm_from_topic(topic)
 
-            # If mirror is not active, only control the first arm (left arm)
-            if not self.mirror and arm_name == "arm_right":
+            if arm_name != self.focused_component:
+                continue
+
+            # Safety: Only move if deadman is active
+            if not self.node.deadman_active:
                 continue
 
             commanded_positions = self.topic_to_commanded_positions[topic]
@@ -153,53 +145,51 @@ class JointTrajectoryController(BaseController):
                 axis_val = 0.0
                 effective_deadzone = deadzone
 
-                # Map axes/buttons as needed for each joint index and apply dominant axis logic
-                if i == 0 and len(msg.axes) > self.node.axis_mapping["left_joystick"]["x"]:
-                    axis_val = left_x
-                    # If left Y is dominant, increase deadzone for left X
-                    if (
-                        self.active_axes["left_joystick"]["y"]
-                        and not self.active_axes["left_joystick"]["x"]
-                    ):
-                        effective_deadzone = self.dominant_axis_threshold
-                elif i == 1 and len(msg.axes) > self.node.axis_mapping["left_joystick"]["y"]:
-                    axis_val = left_y
-                    # If left X is dominant, increase deadzone for left Y
-                    if (
-                        self.active_axes["left_joystick"]["x"]
-                        and not self.active_axes["left_joystick"]["y"]
-                    ):
-                        effective_deadzone = self.dominant_axis_threshold
-                elif i == 2 and len(msg.axes) > self.node.axis_mapping["right_joystick"]["y"]:
-                    axis_val = right_y
-                    # If right X is dominant, increase deadzone for right Y
-                    if (
-                        self.active_axes["right_joystick"]["x"]
-                        and not self.active_axes["right_joystick"]["y"]
-                    ):
-                        effective_deadzone = self.dominant_axis_threshold
-                elif i == 3 and len(msg.axes) > self.node.axis_mapping["right_joystick"]["x"]:
-                    axis_val = right_x
-                    # If right Y is dominant, increase deadzone for right X
-                    if (
-                        self.active_axes["right_joystick"]["y"]
-                        and not self.active_axes["right_joystick"]["x"]
-                    ):
-                        effective_deadzone = self.dominant_axis_threshold
-                elif i == 4:
-                    left_trigger = msg.axes[self.node.axis_mapping["triggers"]["left"]]
-                    right_trigger = msg.axes[self.node.axis_mapping["triggers"]["right"]]
-                    axis_val = right_trigger - left_trigger
-                elif i == 5:
-                    move_left = msg.buttons[self.node.button_mapping["wrist_rotation_left"]] == 1
-                    move_right = msg.buttons[self.node.button_mapping["wrist_rotation_right"]] == 1
-                    if move_left and not move_right:
-                        axis_val = -1.0
-                    elif move_right and not move_left:
-                        axis_val = 1.0
-
-                if self.mirror and joint_name in self.mirrored_joints:
-                    axis_val = -axis_val
+                # Joint Mapping
+                match i:
+                    case 0:
+                        axis_val = left_x
+                        if (
+                            self.active_axes["left_joystick"]["y"]
+                            and not self.active_axes["left_joystick"]["x"]
+                        ):
+                            effective_deadzone = self.dominant_axis_threshold
+                    case 1:
+                        axis_val = left_y
+                        if (
+                            self.active_axes["left_joystick"]["x"]
+                            and not self.active_axes["left_joystick"]["y"]
+                        ):
+                            effective_deadzone = self.dominant_axis_threshold
+                    case 2:
+                        axis_val = right_y
+                        if (
+                            self.active_axes["right_joystick"]["x"]
+                            and not self.active_axes["right_joystick"]["y"]
+                        ):
+                            effective_deadzone = self.dominant_axis_threshold
+                    case 3:
+                        axis_val = right_x
+                        if (
+                            self.active_axes["right_joystick"]["y"]
+                            and not self.active_axes["right_joystick"]["x"]
+                        ):
+                            effective_deadzone = self.dominant_axis_threshold
+                    case 4:
+                        left_trigger = msg.axes[self.node.axis_mapping["triggers"]["left"]]
+                        right_trigger = msg.axes[self.node.axis_mapping["triggers"]["right"]]
+                        axis_val = right_trigger - left_trigger
+                    case 5:
+                        move_left = (
+                            msg.buttons[self.node.button_mapping["wrist_rotation_left"]] == 1
+                        )
+                        move_right = (
+                            msg.buttons[self.node.button_mapping["wrist_rotation_right"]] == 1
+                        )
+                        if move_left:
+                            axis_val = -1.0
+                        elif move_right:
+                            axis_val = 1.0
 
                 if abs(axis_val) > effective_deadzone:
                     current_position = self.duatic_robots_helper.get_joint_value_from_states(
@@ -207,35 +197,28 @@ class JointTrajectoryController(BaseController):
                     )
                     commanded_positions[i] += axis_val * self.node.dt
                     offset = commanded_positions[i] - current_position
-                    if offset > self.joint_pos_offset_tolerance:
-                        commanded_positions[i] = current_position + self.joint_pos_offset_tolerance
-                        self.node.gamepad_feedback.send_feedback(intensity=1.0)
-                    elif offset < -self.joint_pos_offset_tolerance:
-                        commanded_positions[i] = current_position - self.joint_pos_offset_tolerance
+                    if abs(offset) > self.joint_pos_offset_tolerance:
+                        commanded_positions[i] = current_position + math.copysign(
+                            self.joint_pos_offset_tolerance, offset
+                        )
                         self.node.gamepad_feedback.send_feedback(intensity=1.0)
                     any_axis_active = True
 
-            # Update the commanded positions for this topic
             self.topic_to_commanded_positions[topic] = commanded_positions
 
-        # Publish for all topics that have movement
-        if any_axis_active:
-            self.is_joystick_idle = False
+        # Publish if active or if this is the first idle frame (to send the final state)
+        if any_axis_active or not self.is_joystick_idle:
             for topic, publisher in self.joint_trajectory_publishers.items():
-                self.publish_joint_trajectory(
-                    self.topic_to_commanded_positions[topic],
-                    publisher=publisher,
-                    joint_names=self.topic_to_joint_names[topic],
-                )
-        elif not any_axis_active and not self.is_joystick_idle:
-            # Hold position for all topics
-            for topic, publisher in self.joint_trajectory_publishers.items():
-                self.publish_joint_trajectory(
-                    self.topic_to_commanded_positions[topic],
-                    publisher=publisher,
-                    joint_names=self.topic_to_joint_names[topic],
-                )
-            self.is_joystick_idle = True
+                arm_name = self.get_arm_from_topic(topic)
+                if arm_name == self.focused_component:
+                    self.publish_joint_trajectory(
+                        self.topic_to_commanded_positions[topic],
+                        publisher,
+                        self.topic_to_joint_names[topic],
+                    )
+
+            # Update idle state: if no axis was active, we are now idle
+            self.is_joystick_idle = not any_axis_active
 
     def publish_joint_trajectory(
         self, target_positions, publisher, joint_names, speed_percentage=1.0

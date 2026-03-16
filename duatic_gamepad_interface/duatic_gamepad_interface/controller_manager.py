@@ -39,6 +39,7 @@ class ControllerManager:
 
     def __init__(self, node, duatic_robots_helper: DuaticRobotsHelper):
         self.node = node
+        self.duatic_robots_helper = duatic_robots_helper
 
         self.active_high_level_controller_index = -1
         self.active_low_level_controllers = []
@@ -47,11 +48,13 @@ class ControllerManager:
 
         self.duatic_controller_helper = DuaticControllerHelper(self.node)
 
+        # Controllers that should not be deactivated once they are active (to preserve state/odometry)
+        self.protected_llcs = ["mecanum_drive_controller"]
+
         # Initialize all potential controllers
         self.all_potential_controllers = {
             0: FreedriveController(self.node, duatic_robots_helper),
             1: JointTrajectoryController(self.node, duatic_robots_helper),
-            # 2: CartesianController(self.node, duatic_robots_helper),
             2: MecanumController(self.node, duatic_robots_helper),
         }
 
@@ -63,9 +66,24 @@ class ControllerManager:
 
         self.node.create_timer(0.2, self.check_active_low_level_controllers)
 
+    # Policy: Map robot morphology to supported features
+    CAPABILITY_MAPPING = {
+        "mobile_manipulator": ["mobility", "manipulation", "freedrive"],
+        "multi_arm": ["manipulation", "freedrive"],
+        "mobile_base": ["mobility"],
+        "single_arm": ["manipulation", "freedrive"],
+    }
+
     def _filter_available_controllers(self):
         """Check which controllers are available and filter out unavailable ones."""
         self.node.get_logger().info("Checking controller availability...")
+
+        # Get the morphology from the source of truth (Helper)
+        robot_structure = self.duatic_robots_helper.robot_structure
+        supported_capabilities = self.CAPABILITY_MAPPING.get(robot_structure, [])
+        self.node.get_logger().info(
+            f"Robot morphology: {robot_structure}, Supported capabilities: {supported_capabilities}"
+        )
 
         # Get all available low-level controllers from the system
         self.duatic_controller_helper.wait_for_controller_data()
@@ -83,35 +101,47 @@ class ControllerManager:
         for idx, controller in self.all_potential_controllers.items():
             controller_name = controller.__class__.__name__
 
+            # Check if robot has the required capabilities for this high-level controller
+            if hasattr(controller, "needed_capabilities"):
+                missing_capabilities = [
+                    c for c in controller.needed_capabilities if c not in supported_capabilities
+                ]
+                if missing_capabilities:
+                    self.node.get_logger().debug(
+                        f"❌ {controller_name} - Morphology skip (missing capabilities: {missing_capabilities})"
+                    )
+                    continue
+
             if hasattr(controller, "get_low_level_controllers"):
                 required_controllers = controller.get_low_level_controllers()
 
-                # Check if all required low-level controllers are available
-                all_required_available = True
-                missing_controllers = []
+                # Use helper to find matching controllers (supports both base names and specific names)
+                matching_controllers = self.duatic_controller_helper.get_all_controllers(
+                    required_controllers
+                )
 
-                for required in required_controllers:
-                    # Check if any system controller contains the required controller name
-                    controller_found = any(
-                        required in system_controller
-                        for system_controller in all_system_controllers
-                    )
-                    if not controller_found:
-                        all_required_available = False
-                        missing_controllers.append(required)
-
-                if all_required_available:
+                # Check if all required low-level controllers are satisfied
+                # A controller is available if at least as many matching LLCs are found as required
+                # (This handles both base pattern requirements and specific instance requirements)
+                if len(matching_controllers) >= len(required_controllers):
                     available_controllers[new_index] = controller
                     self.node.get_logger().info(
                         f"✅ {controller_name} (index {new_index}) - Available (requires: {required_controllers})"
                     )
                     new_index += 1
                 else:
-                    self.node.get_logger().warn(
-                        f"❌ {controller_name} - Unavailable (missing: {missing_controllers})"
+                    # Determine what exactly is missing for the log
+                    missing = [r for r in required_controllers if r not in matching_controllers]
+                    # If required was a base name, check if any instance of that base was found
+                    for r in required_controllers:
+                        if r in missing and any(m.startswith(r) for m in matching_controllers):
+                            missing.remove(r)
+
+                    self.node.get_logger().debug(
+                        f"❌ {controller_name} - Unavailable (missing: {missing})"
                     )
             else:
-                self.node.get_logger().warn(
+                self.node.get_logger().debug(
                     f"❌ {controller_name} - No get_low_level_controllers method"
                 )
 
@@ -158,6 +188,8 @@ class ControllerManager:
             self.node.get_logger().warn("    ✅   Emergency stop is DEACTIVATED!   ✅           ")
             self.is_freeze_active = False
             self.emergency_button_was_pressed = False
+            # Sync controllers to catch up with any changes made while frozen
+            self.trigger_llc_sync()
 
         active_low_level_controllers = self.duatic_controller_helper.get_active_controllers()
         if not active_low_level_controllers or len(active_low_level_controllers) <= 0:
@@ -260,6 +292,14 @@ class ControllerManager:
             f"Switching to high-level controller index: {next_high_level_controller_index} ({next_high_level_controller.__class__.__name__})"
         )
 
+        # If freeze is active, we do NOT switch low-level controllers now.
+        # We wait until freeze is deactivated and then sync.
+        if self.is_freeze_active:
+            self.node.get_logger().info(
+                "E-Stop active: Deferring low-level controller switch until deactivated."
+            )
+            return
+
         matching_controllers = self.duatic_controller_helper.get_all_controllers(
             next_low_level_controllers
         )
@@ -275,9 +315,13 @@ class ControllerManager:
 
         controllers_to_deactivate = []
         for controller in active_low_level_controllers:
-            if controller not in matching_controllers:
+            # Check if controller is in protected list (by base name or exact name)
+            is_protected = any(controller.startswith(p) for p in self.protected_llcs)
+            if controller not in matching_controllers and not is_protected:
                 controllers_to_deactivate.append(controller)
                 self.node.get_logger().debug(f"Will deactivate controller: {controller}")
+            elif is_protected:
+                self.node.get_logger().debug(f"Preserving protected controller: {controller}")
 
         self.duatic_controller_helper.switch_controller(
             controllers_to_activate, controllers_to_deactivate
@@ -285,3 +329,36 @@ class ControllerManager:
 
         for idx, high_level_controller in self.all_high_level_controllers.items():
             high_level_controller.reset()
+
+    def trigger_llc_sync(self):
+        """Synchronize low-level controllers based on the current high-level controller's needs."""
+        if self.is_freeze_active:
+            self.node.get_logger().debug("Cannot sync LLCs while E-Stop is active.")
+            return
+
+        current_hlc = self.get_current_controller()
+        if not current_hlc:
+            return
+
+        needed_llcs = current_hlc.get_low_level_controllers()
+        if not needed_llcs:
+            return
+
+        active_llcs = self.duatic_controller_helper.get_active_controllers()
+        target_llcs = self.duatic_controller_helper.get_all_controllers(needed_llcs)
+
+        activate = [c for c in target_llcs if c not in active_llcs]
+        deactivate = []
+        for c in active_llcs:
+            is_protected = any(c.startswith(p) for p in self.protected_llcs)
+            if c not in target_llcs and not is_protected:
+                deactivate.append(c)
+
+        # Safety: Do not deactivate mecanum or freedrive if they are still part of the potential needs
+        # (Though trigger_llc_sync is usually called within one HLC mode)
+
+        if activate or deactivate:
+            self.node.get_logger().info(
+                f"Syncing LLCs: activate={activate}, deactivate={deactivate}"
+            )
+            self.duatic_controller_helper.switch_controller(activate, deactivate)

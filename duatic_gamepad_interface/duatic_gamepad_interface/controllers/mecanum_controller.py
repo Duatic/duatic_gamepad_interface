@@ -32,9 +32,15 @@ class MecanumController(BaseController):
 
     def __init__(self, node, duatic_robots_helper):
         super().__init__(node, duatic_robots_helper)
+        self.needed_capabilities = ["mobility"]
         self.node.get_logger().info("Initializing mecanum controller.")
 
-        self.needed_low_level_controllers = ["mecanum_drive_controller"]
+        self.base_needed_llcs = ["mecanum_drive_controller"]
+        self.potential_freeze_llcs = [
+            "freeze_controller_hip",
+            "freeze_controller_arm_left",
+            "freeze_controller_arm_right",
+        ]
 
         # Create publisher for mecanum drive
         self.twist_publisher = self.node.create_publisher(TwistStamped, "cmd_vel", 10)
@@ -58,6 +64,20 @@ class MecanumController(BaseController):
         self.is_initialized = False
 
         self.node.get_logger().info("Mecanum controller initialized")
+
+    def get_low_level_controllers(self):
+        """Returns the names of low-level controllers needed for mecanum mode."""
+        # Standard drive controller is always needed
+        needed = list(self.base_needed_llcs)
+
+        # Only add freeze controllers that actually exist in the system and are for arm/hip
+        # Use the helper to find the full names of existing instances matching our patterns
+        available_freezes = self.duatic_controller_helper.get_all_controllers(
+            self.potential_freeze_llcs
+        )
+        needed.extend(available_freezes)
+
+        return needed
 
     def _is_valid_float(self, value):
         """Check if a value is a valid finite float."""
@@ -99,6 +119,9 @@ class MecanumController(BaseController):
 
     def process_input(self, joy_msg):
         """Process joystick input and convert to mecanum drive commands."""
+        if not self.node.deadman_active:
+            self._send_zero_command()
+            return
 
         # Calculate time delta
         current_time = self.node.get_clock().now()
