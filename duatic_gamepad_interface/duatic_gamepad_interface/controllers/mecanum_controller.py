@@ -43,7 +43,7 @@ class MecanumController(BaseController):
         ]
 
         # Create publisher for mecanum drive
-        self.twist_publisher = self.node.create_publisher(TwistStamped, "cmd_vel", 10)
+        self.twist_publisher = self.node.create_publisher(TwistStamped, "cmd_vel_smoothed", 10)
 
         # Get control parameters from ROS parameters
         self.max_vel = self.node.declare_parameter("max_vel", 0.6).value
