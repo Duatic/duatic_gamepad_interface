@@ -46,8 +46,8 @@ class MecanumController(BaseController):
         self.twist_publisher = self.node.create_publisher(TwistStamped, "cmd_vel_smoothed", 10)
 
         # Get control parameters from ROS parameters
-        self.max_vel = self.node.declare_parameter("max_vel", 0.6).value
-        self.max_accel = self.node.declare_parameter("max_accel", 0.1).value  # m/s²
+        self.max_vel = self.node.declare_parameter("max_vel", 1.0).value
+        self.max_accel = self.node.declare_parameter("max_accel", 0.4).value  # m/s²
 
         # Deadzone for joystick input
         self.deadzone = self.node.declare_parameter("deadzone", 0.25).value
