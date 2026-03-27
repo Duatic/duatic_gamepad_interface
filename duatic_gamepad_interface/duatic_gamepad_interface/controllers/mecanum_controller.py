@@ -46,11 +46,12 @@ class MecanumController(BaseController):
         self.twist_publisher = self.node.create_publisher(TwistStamped, "cmd_vel_smoothed", 10)
 
         # Get control parameters from ROS parameters
-        self.max_vel = self.node.declare_parameter("max_vel", 0.6).value
-        self.max_accel = self.node.declare_parameter("max_accel", 0.3).value  # m/s²
+        self.max_vel = self.node.declare_parameter("max_vel", 0.6).value  # m/s
+        self.accel_limit = self.node.declare_parameter("accel_limit", 0.5).value  # m/s²
+        self.decel_limit = self.node.declare_parameter("decel_limit", 1.0).value  # m/s²
 
         # Deadzone for joystick input
-        self.deadzone = self.node.declare_parameter("deadzone", 0.25).value
+        self.deadzone = self.node.declare_parameter("deadzone", 0.05).value
 
         # Current velocity state for acceleration limiting - ensure valid initialization
         self.current_linear_x = 0.0
@@ -93,7 +94,7 @@ class MecanumController(BaseController):
         """Reset commanded positions to current joint states for all topics."""
         self._send_zero_command()
 
-    def _apply_acceleration_limit(self, target_vel, current_vel, max_accel, dt):
+    def _apply_acceleration_limit(self, target_vel, current_vel, dt):
         """Apply acceleration limiting to smooth velocity changes."""
         # Extra validation to prevent NaN propagation
         if not self._is_valid_float(target_vel):
@@ -103,8 +104,13 @@ class MecanumController(BaseController):
         if not self._is_valid_float(dt) or dt <= 0:
             return current_vel
 
+        # Use decel limit for braking
+        if abs(target_vel) < abs(current_vel) or target_vel * current_vel < 0:
+            max_vel_change = self.decel_limit * dt
+        else:
+            max_vel_change = self.accel_limit * dt
+
         vel_diff = target_vel - current_vel
-        max_vel_change = max_accel * dt
 
         # Additional safety check
         if not self._is_valid_float(vel_diff) or not self._is_valid_float(max_vel_change):
@@ -181,13 +187,13 @@ class MecanumController(BaseController):
 
         # Apply acceleration limiting with extra safety
         self.current_linear_x = self._apply_acceleration_limit(
-            target_linear_x, self.current_linear_x, self.max_accel, dt
+            target_linear_x, self.current_linear_x, dt
         )
         self.current_linear_y = self._apply_acceleration_limit(
-            target_linear_y, self.current_linear_y, self.max_accel, dt
+            target_linear_y, self.current_linear_y, dt
         )
         self.current_angular_z = self._apply_acceleration_limit(
-            target_angular_z, self.current_angular_z, self.max_accel, dt
+            target_angular_z, self.current_angular_z, dt
         )
 
         # Final validation of calculated values
