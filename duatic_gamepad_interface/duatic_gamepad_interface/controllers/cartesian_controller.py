@@ -27,8 +27,8 @@ from geometry_msgs.msg import PoseStamped
 from tf_transformations import quaternion_from_euler, quaternion_multiply
 from duatic_gamepad_interface.controllers.base_controller import BaseController
 
-from duatic_dynaarm_extensions.duatic_helpers.duatic_marker_helper import DuaticMarkerHelper
-from duatic_dynaarm_extensions.duatic_helpers.duatic_pinocchio_helper import DuaticPinocchioHelper
+from duatic_helpers.duatic_marker_helper import DuaticMarkerHelper
+from duatic_helpers.duatic_pinocchio_helper import DuaticPinocchioHelper
 
 
 class CartesianController(BaseController):

@@ -24,8 +24,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-from duatic_dynaarm_extensions.duatic_helpers.duatic_controller_helper import DuaticControllerHelper
-from duatic_dynaarm_extensions.duatic_helpers.duatic_robots_helper import DuaticRobotsHelper
+from duatic_helpers.duatic_controller_helper import DuaticControllerHelper
+from duatic_helpers.duatic_robots_helper import DuaticRobotsHelper
 from duatic_gamepad_interface.controllers.joint_trajectory_controller import (
     JointTrajectoryController,
 )

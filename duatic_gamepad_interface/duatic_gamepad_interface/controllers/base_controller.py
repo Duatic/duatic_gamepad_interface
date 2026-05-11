@@ -21,9 +21,9 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from duatic_dynaarm_extensions.duatic_helpers.duatic_robots_helper import DuaticRobotsHelper
-from duatic_dynaarm_extensions.duatic_helpers.duatic_jtc_helper import DuaticJTCHelper
-from duatic_dynaarm_extensions.duatic_helpers.duatic_controller_helper import DuaticControllerHelper
+from duatic_helpers.duatic_robots_helper import DuaticRobotsHelper
+from duatic_helpers.duatic_jtc_helper import DuaticJTCHelper
+from duatic_helpers.duatic_controller_helper import DuaticControllerHelper
 
 
 class BaseController:

@@ -16,8 +16,8 @@
   <depend>joy</depend>
   <depend>geometry_msgs</depend>
   <depend>trajectory_msgs</depend>
-  <depend>duatic_dynaarm_extensions</depend>
   <depend>ament_index_python</depend>
+  <depend>duatic_helpers</depend>
 
   <test_depend>ament_cmake_pytest</test_depend>
 
