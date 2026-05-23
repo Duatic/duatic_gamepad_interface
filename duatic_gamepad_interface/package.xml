@@ -3,21 +3,23 @@
 <package format="3">
   <name>duatic_gamepad_interface</name>
   <version>1.0.0</version>
-  <description>Modular gamepad interface for DynaArm using ROS 2.</description>
+  <description>Modular gamepad interface using ROS 2.</description>
 
   <author email="tschwarzer@duatic.com">Timo Schwarzer</author>
   <maintainer email="tschwarzer@duatic.com">Timo Schwarzer</maintainer>
   <license>BSD 3-Clause</license>
 
-  <depend>rclpy</depend>
-  <depend>sensor_msgs</depend>
-  <depend>std_msgs</depend>
-  <depend>tf_transformations</depend>
-  <depend>joy</depend>
-  <depend>geometry_msgs</depend>
-  <depend>trajectory_msgs</depend>
-  <depend>ament_index_python</depend>
-  <depend>duatic_helpers</depend>
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>duatic_helpers</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>joy</exec_depend>
+  <exec_depend>python3-types-pyyaml</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>tf_transformations</exec_depend>
+  <exec_depend>trajectory_msgs</exec_depend>
 
   <test_depend>ament_cmake_pytest</test_depend>
 
