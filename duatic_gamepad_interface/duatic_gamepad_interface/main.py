@@ -36,7 +36,7 @@ from sensor_msgs.msg import Joy
 
 from duatic_gamepad_interface.controller_manager import ControllerManager
 from duatic_gamepad_interface.utils.gamepad_feedback import GamepadFeedback
-from duatic_dynaarm_extensions.duatic_helpers.duatic_robots_helper import DuaticRobotsHelper
+from duatic_helpers.duatic_robots_helper import DuaticRobotsHelper
 
 
 class GamepadInterface(Node):
