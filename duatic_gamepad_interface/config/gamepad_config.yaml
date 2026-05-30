@@ -33,6 +33,7 @@ gamepad_node:
       wrist_rotation_right: 8
       switch_controller: 6  # Menu button for switching controllers
       gripper_control: 0
+      pin_release_trigger: 2  # Face Left (Square)
     axis_mapping:
       left_joystick:
         x: 0

@@ -330,6 +330,19 @@ class ControllerManager:
         for idx, high_level_controller in self.all_high_level_controllers.items():
             high_level_controller.reset()
 
+    def trigger_pin_release_controller(self):
+        """Activate pin_release_controller; if already active, deactivate then reactivate atomically."""
+        existing = self.duatic_controller_helper.get_all_controllers(["pin_release_controller"])
+        if not existing:
+            return
+        active = self.duatic_controller_helper.get_active_controllers()
+        currently_active = [c for c in existing if c in active]
+        # SwitchController service processes deactivations before activations, making this atomic.
+        self.duatic_controller_helper.switch_controller(existing, currently_active)
+        self.node.get_logger().info(
+            f"pin_release_controller triggered (was_active={bool(currently_active)})"
+        )
+
     def trigger_llc_sync(self):
         """Synchronize low-level controllers based on the current high-level controller's needs."""
         if self.is_freeze_active:

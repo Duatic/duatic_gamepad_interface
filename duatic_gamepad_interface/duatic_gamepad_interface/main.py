@@ -48,6 +48,7 @@ class GamepadInterface(Node):
         self.latest_joy_msg = None
         self.joy_lock = threading.Lock()
         self.last_menu_button_state = 0
+        self.last_pin_release_button_state = 0
         self.move_command_active = False  # Track if move_home or move_sleep was executed
         self.deadman_active = False  # Track deadman switch state
         self.last_deadman_state = False  # Track previous deadman state for edge detection
@@ -113,6 +114,14 @@ class GamepadInterface(Node):
 
         # Handle focus switching (independent of deadman)
         self._update_focus(msg)
+
+        # Handle pin_release_controller trigger (no deadman required)
+        pin_release_idx = self.button_mapping.get("pin_release_trigger")
+        if pin_release_idx is not None and len(msg.buttons) > pin_release_idx:
+            pin_release_pressed = msg.buttons[pin_release_idx]
+            if pin_release_pressed and not self.last_pin_release_button_state:
+                self.controller_manager.trigger_pin_release_controller()
+            self.last_pin_release_button_state = pin_release_pressed
 
         # Check deadman switch and track state changes
         current_deadman_state = msg.buttons[self.button_mapping["dead_man_switch"]] == 1
