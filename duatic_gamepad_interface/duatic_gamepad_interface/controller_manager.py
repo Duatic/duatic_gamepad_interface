@@ -31,6 +31,7 @@ from duatic_gamepad_interface.controllers.joint_trajectory_controller import (
 )
 from duatic_gamepad_interface.controllers.freedrive_controller import FreedriveController
 from duatic_gamepad_interface.controllers.mecanum_controller import MecanumController
+from duatic_gamepad_interface.controllers.platform_velocity_controller import PlatformVelocityController
 from duatic_gamepad_interface.controllers.gripper_controller import GripperController
 
 
@@ -49,13 +50,16 @@ class ControllerManager:
         self.duatic_controller_helper = DuaticControllerHelper(self.node)
 
         # Controllers that should not be deactivated once they are active (to preserve state/odometry)
-        self.protected_llcs = ["mecanum_drive_controller"]
+        self.protected_llcs = ["mecanum_drive_controller", "platform_velocity_controller"]
+
+        helper = self.duatic_controller_helper
 
         # Initialize all potential controllers
         self.all_potential_controllers = {
             0: FreedriveController(self.node, duatic_robots_helper),
             1: JointTrajectoryController(self.node, duatic_robots_helper),
             2: MecanumController(self.node, duatic_robots_helper),
+            3: PlatformVelocityController(self.node, duatic_robots_helper),
         }
 
         self.gripper_controller = GripperController(self.node, duatic_robots_helper)
