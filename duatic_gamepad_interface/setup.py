@@ -39,7 +39,7 @@ setup(
     zip_safe=True,
     maintainer="Timo Schwarzer",
     maintainer_email="tschwarzer@duatic.com",
-    tests_require=["pytest"],
+    extras_require={"test": ["pytest"]},
     description="Modular gamepad interface for DynaArm using ROS 2.",
     license="BSD-3-Clause",
     entry_points={
