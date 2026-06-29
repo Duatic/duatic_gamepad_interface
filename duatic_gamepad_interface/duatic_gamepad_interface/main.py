@@ -101,6 +101,8 @@ class GamepadInterface(Node):
     def joy_callback(self, msg: Joy):
         """Store latest joystick message."""
         with self.joy_lock:
+            if self.latest_joy_msg is None:
+                self.get_logger().info("Gamepad connected — joy messages received.")
             self.latest_joy_msg = msg
 
     def process_joy_input(self):
@@ -109,6 +111,11 @@ class GamepadInterface(Node):
             msg = self.latest_joy_msg  # Get the latest stored joystick input
 
         if msg is None:
+            self.get_logger().warn(
+                "No joy message received. Is joy_node running? "
+                "Start gamepad_interface with: -r joy:=/joy",
+                throttle_duration_sec=5.0,
+            )
             return
 
         # Handle focus switching (independent of deadman)
