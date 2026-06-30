@@ -2,6 +2,7 @@
 
 [![Jazzy Build Main](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/build-jazzy.yml/badge.svg?branch=main)](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/build-jazzy.yml)
 [![Kilted Build Main](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/build-kilted.yml/badge.svg?branch=main)](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/build-kilted.yml)
+[![Lyrical Build Main](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/build-lyrical.yml/badge.svg?branch=main)](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/build-lyrical.yml)
 [![Rolling Build Main](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/build-rolling.yml/badge.svg?branch=main)](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/build-rolling.yml)
 
 This repository provides a modular gamepad interface for Duatic products, enabling intuitive control of robots like the DynaArm. It supports various controller types and features a dynamic focus mechanism for controlling different robotic components (e.g., arms, hip, platform).
