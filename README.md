@@ -1,9 +1,9 @@
 # duatic_gamepad_interface
 
-[![Jazzy](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/build-jazzy.yml/badge.svg?branch=main)](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/build-jazzy.yml)
-[![Kilted](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/build-kilted.yml/badge.svg?branch=main)](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/build-kilted.yml)
-[![Lyrical](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/build-lyrical.yml/badge.svg?branch=main)](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/build-lyrical.yml)
-[![Rolling](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/build-rolling.yml/badge.svg?branch=main)](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/build-rolling.yml)
+[![Jazzy](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/mbloechli/06f17a22e665926311f010c778ea2391/raw/duatic_gamepad_interface-jazzy.json)](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/ci.yml)
+[![Kilted](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/mbloechli/06f17a22e665926311f010c778ea2391/raw/duatic_gamepad_interface-kilted.json)](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/ci.yml)
+[![Lyrical](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/mbloechli/06f17a22e665926311f010c778ea2391/raw/duatic_gamepad_interface-lyrical.json)](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/ci.yml)
+[![Rolling](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/mbloechli/06f17a22e665926311f010c778ea2391/raw/duatic_gamepad_interface-rolling.json)](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/ci.yml)
 
 This repository provides a modular gamepad interface for Duatic products, enabling intuitive control of robots like the DynaArm. It supports various controller types and features a dynamic focus mechanism for controlling different robotic components (e.g., arms, hip, platform).
 
