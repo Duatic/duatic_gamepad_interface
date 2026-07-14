@@ -1,0 +1,25 @@
+name: CI
+on:
+  workflow_dispatch:
+    inputs:
+      ros_distro:
+        description: 'Distro to build'
+        type: choice
+        options: [all, jazzy, kilted, lyrical, rolling]
+        default: all
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+  schedule:
+    # Run every morning at 01:00 to detect flakiness and broken dependencies
+    - cron: '0 1 * * *'
+      timezone: "Europe/Zurich"
+
+jobs:
+  ci:
+    uses: Duatic/ci-workflows/.github/workflows/ci_orchestrator.yml@v1
+    with:
+      ros_distro: ${{ inputs.ros_distro }}
+      badge_gist_id: 06f17a22e665926311f010c778ea2391
+    secrets: inherit
