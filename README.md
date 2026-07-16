@@ -1,5 +1,7 @@
 # duatic_gamepad_interface
 
+> ⚠️ **Deprecated:** This repository is no longer maintained and has been replaced by [duatic_teleop](https://github.com/Duatic/duatic_teleop). Please migrate to `duatic_teleop_gamepad` for all new and existing integrations.
+
 [![Jazzy](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/mbloechli/06f17a22e665926311f010c778ea2391/raw/duatic_gamepad_interface-jazzy.json)](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/ci.yml)
 [![Kilted](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/mbloechli/06f17a22e665926311f010c778ea2391/raw/duatic_gamepad_interface-kilted.json)](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/ci.yml)
 [![Lyrical](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/mbloechli/06f17a22e665926311f010c778ea2391/raw/duatic_gamepad_interface-lyrical.json)](https://github.com/Duatic/duatic_gamepad_interface/actions/workflows/ci.yml)
